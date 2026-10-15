@@ -11,15 +11,15 @@ export function sanitizeDraft(input: any, base: Envelope): Envelope {
   const recipients: Recipient[] = (Array.isArray(input?.recipients) ? input.recipients : []).slice(0, 10).map((r: any, i: number): Recipient => {
     const prev = typeof r?.id === "string" ? old.get(r.id) : undefined;
     const cid = typeof r?.id === "string" && /^r_[a-z0-9]{3,20}$/.test(r.id) && !seen.has(r.id) ? r.id : rid("r_"); seen.add(cid);
-    return { id: prev?.id ?? cid, name: str(r?.name, 80), email: str(r?.email, 160).toLowerCase(), order: i + 1, roleName: str(r?.roleName, 80), token: prev?.token ?? newToken(), status: prev?.status ?? "pending", ...(prev?.signedAt ? { signedAt: prev.signedAt } : {}) };
+    return { id: prev?.id ?? cid, name: str(r?.name, 80), email: str(r?.email, 160).toLowerCase(), order: i + 1, role: r?.role === "cc" || r?.role === "viewer" ? r.role : "signer", roleName: str(r?.roleName, 80), token: prev?.token ?? newToken(), status: prev?.status ?? "pending", ...(prev?.signedAt ? { signedAt: prev.signedAt } : {}) };
   });
-  const rids = new Set(recipients.map(r => r.id));
+  const rids = new Set(recipients.filter(r => (r.role ?? "signer") === "signer").map(r => r.id));
   const fields: Field[] = (Array.isArray(input?.fields) ? input.fields : []).slice(0, 200).flatMap((f: any): Field[] => {
     if (!FTYPES.has(f?.type) || !rids.has(f?.recipientId)) return [];
     const page = Math.round(clamp(f.page, 0, Math.max(0, base.pages.length - 1))); const w = clamp(f.w, 0.01, 1), h = clamp(f.h, 0.01, 1);
     return [{ id: /^[A-Za-z0-9_-]{3,40}$/.test(f?.id ?? "") ? f.id : rid("f_"), recipientId: f.recipientId, type: f.type, page, x: clamp(f.x, 0, 1 - w), y: clamp(f.y, 0, 1 - h), w, h, required: f.type === "checkbox" ? !!f.required : f.required !== false, ...(f.label ? { label: str(f.label, 60) } : {}) }];
   });
-  return { ...base, title: str(input?.title, 120) || "Untitled document", message: str(input?.message, 600), sequential: input?.sequential !== false, recipients, fields, updatedAt: Date.now() };
+  return { ...base, title: str(input?.title, 120) || "Untitled document", message: str(input?.message, 600), subject: str(input?.subject, 120), expireDays: Math.round(clamp(input?.expireDays ?? base.expireDays ?? 30, 1, 365)), reminderDays: Math.round(clamp(input?.reminderDays ?? base.reminderDays ?? 3, 1, 30)), sequential: input?.sequential !== false, recipients, fields, updatedAt: Date.now() };
 }
 /** Problems that stop a draft from being sent. Empty array = ready. */
 export function sendProblems(e: Envelope): string[] {
@@ -29,19 +29,20 @@ export function sendProblems(e: Envelope): string[] {
   if (!e.recipients.length) p.push("Add at least one recipient");
   for (const r of e.recipients) { if (!r.name) p.push(`Recipient ${r.order} needs a name`); if (!isEmail(r.email)) p.push(`Recipient ${r.order} needs a valid email`); }
   if (new Set(e.recipients.map(r => r.email)).size !== e.recipients.length) p.push("Each recipient needs a different email");
-  for (const r of e.recipients) if (!e.fields.some(f => f.recipientId === r.id && f.type === "signature")) p.push(`${r.name || "Recipient " + r.order} needs a signature field`);
+  if (e.recipients.length && e.recipients.every(r => r.role === "cc")) p.push("Add a signer or a recipient who needs to view");
+  for (const r of e.recipients) if ((r.role ?? "signer") === "signer" && !e.fields.some(f => f.recipientId === r.id && f.type === "signature")) p.push(`${r.name || "Recipient " + r.order} needs a signature field`);
   return p;
 }
 /** Whose turn is it? Sequential: the first unsigned recipient. Parallel: everyone unsigned. */
 export function canSign(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: string } {
-  if (e.status !== "sent" || r.status === "signed") return { ok: false };
+  if (e.status !== "sent" || expired(e) || r.status !== "pending" || r.role === "cc") return { ok: false };
   if (!e.sequential) return { ok: true };
-  const blocker = e.recipients.find(x => x.order < r.order && x.status !== "signed"); return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
+  const blocker = e.recipients.find(x => x.order < r.order && x.role !== "cc" && x.status === "pending"); return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
 }
 export function findByToken(e: Envelope, token: string) { return e.recipients.find(r => r.token === token); }
 export function signerView(e: Envelope, r: Recipient): SignerView {
   const c = canSign(e, r);
-  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status }, myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
+  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer" }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
     fields: e.fields.filter(f => f.recipientId === r.id), message: e.message, others: e.recipients.filter(x => x.id !== r.id).map(x => ({ name: x.name, status: x.status })) };
 }
 export const todayStr = (at = Date.now()) => new Date(at).toISOString().slice(0, 10);
@@ -61,4 +62,5 @@ export function resolveSubmission(e: Envelope, r: Recipient, pl: SignPayload): {
   return { values: out };
 }
 export const initialsOf = (name: string) => name.split(/\s+/).filter(Boolean).slice(0, 3).map(w => w[0]!.toUpperCase()).join("");
-export function statusSummary(e: Envelope) { const done = e.recipients.filter(r => r.status === "signed").length; return `${done} of ${e.recipients.length} signed`; }
+export const expired = (e: Envelope) => e.status === "sent" && !!e.expiresAt && e.expiresAt <= Date.now();
+export function statusSummary(e: Envelope) { const active = e.recipients.filter(r => r.role !== "cc"); return `${active.filter(r => r.status !== "pending").length} of ${active.length} complete`; }
