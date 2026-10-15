@@ -6,7 +6,7 @@ import fs from "node:fs/promises";
 import path from "node:path";
 
 const safe = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
-const useFirestore = () => !!process.env["FIREBASE_SERVICE_ACCOUNT_JSON"];
+const firestoreEnabled = () => !!process.env["FIREBASE_SERVICE_ACCOUNT_JSON"];
 const appName = () => safe((process.env["NEXT_PUBLIC_BASE_PATH"] ?? "/app").replace(/\//g, "")) || "app";
 const CHUNK = 900_000;
 
@@ -67,16 +67,16 @@ async function fileList<T>(col: string): Promise<T[]> {
 }
 async function fileDel(col: string, id: string) { try { await fs.unlink(path.join(dir(), safe(col), safe(id) + ".json")); } catch { /* ok */ } }
 
-export const getDoc = <T>(col: string, id: string): Promise<T | null> => (useFirestore() ? fsGet<T>(col, id) : fileGet<T>(col, id));
-export const putDoc = <T>(col: string, id: string, doc: T): Promise<void> => (useFirestore() ? fsPut(col, id, doc) : filePut(col, id, doc));
-export const listDocs = <T>(col: string): Promise<T[]> => (useFirestore() ? fsList<T>(col) : fileList<T>(col));
-export const delDoc = (col: string, id: string): Promise<void> => (useFirestore() ? fsDel(col, id) : fileDel(col, id));
+export const getDoc = <T>(col: string, id: string): Promise<T | null> => (firestoreEnabled() ? fsGet<T>(col, id) : fileGet<T>(col, id));
+export const putDoc = <T>(col: string, id: string, doc: T): Promise<void> => (firestoreEnabled() ? fsPut(col, id, doc) : filePut(col, id, doc));
+export const listDocs = <T>(col: string): Promise<T[]> => (firestoreEnabled() ? fsList<T>(col) : fileList<T>(col));
+export const delDoc = (col: string, id: string): Promise<void> => (firestoreEnabled() ? fsDel(col, id) : fileDel(col, id));
 
 /** After a guest signs in: move every per-user doc (docs keyed by the user id) from the guest id to the account, once. */
 export async function adoptGuestDocs(fromId: string, toId: string): Promise<number> {
   if (!fromId || !toId || fromId === toId) return 0;
   let moved = 0;
-  if (useFirestore()) {
+  if (firestoreEnabled()) {
     const d = await db(); const prefix = `${appName()}__`;
     for (const col of await d.listCollections()) {
       if (!col.id.startsWith(prefix)) continue;

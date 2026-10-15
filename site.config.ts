@@ -1,7 +1,7 @@
 import type { Site } from "@/lib/site-types";
 const GH = "https://github.com/tommy-muckstack/docusignisdead";
 export const site: Site = {
-  slug: "docusignisdead", name: "DocuSignIsDead", replaces: "DocuSign", theme: "docusign",
+  slug: "docusignisdead", name: "DocuSignIsDead", replaces: "paid e-signature software", theme: "docusign",
   glyph: "M6 17 C9 8 11 8 12 13 C13 17 15 12 18 7 M5 19 H19",
   nav: [{ label: "Products", id: "product" }, { label: "Solutions", id: "solutions" }, { label: "Resources", id: "resources" }, { label: "Pricing", id: "pricing" }],
   cta: "Get started, it's free",
@@ -19,8 +19,8 @@ export const site: Site = {
   statsTitle: "Real numbers, no fine print",
   stats: [{ b: "$0", s: "for every plan we replace" }, { b: "No caps", s: "unlimited documents, signers and fields" }, { b: "5 fields", s: "signature, initials, date, text, checkbox" }, { b: "Apache-2.0", s: "self-host it, fork it, change it" }],
   integrations: { title: "Fits the way you already work", text: "Share signing links in email, chat or a text message, and download a standard PDF at the end. Email delivery, templates and an API are on the roadmap." },
-  pricing: { title: "What you'd pay for an e-signature tool", vendor: "DocuSign", asOf: "October 2026", plans: [{ name: "Personal", perSeatMonth: 10, note: "5 envelopes a month, 1 user" }, { name: "Standard", perSeatMonth: 25, note: "100 envelopes a year per user" }, { name: "Business Pro", perSeatMonth: 40, note: "100 envelopes a year per user" }], seats: 3,
-    footnote: "DocuSign prices are per user, per month, billed yearly (monthly billing is $15, $45 and $65). Envelopes beyond your allowance cost extra. Self-hosting has your own hosting costs; a small instance fits in free tiers.", featuresTitle: "Every feature, no plan gates",
+  pricing: { title: "What you'd pay for an e-signature tool", vendor: "Reference plans", asOf: "October 2026", plans: [{ name: "Personal", perSeatMonth: 10, note: "5 envelopes a month, 1 user" }, { name: "Standard", perSeatMonth: 25, note: "100 envelopes a year per user" }, { name: "Business Pro", perSeatMonth: 40, note: "100 envelopes a year per user" }], seats: 3,
+    footnote: "Reference prices are per user, per month, billed yearly (monthly billing is $15, $45 and $65). Envelopes beyond your allowance cost extra. Self-hosting has your own hosting costs; a small instance fits in free tiers.", featuresTitle: "Every feature, no plan gates",
     features: [{ name: "Unlimited documents and signers", plan: "Standard" }, { name: "Sequential signing order", plan: "Standard" }, { name: "Reusable templates", plan: "Standard" }, { name: "Certificate of completion", plan: "Personal" }, { name: "Status tracking and void", plan: "Personal" }, { name: "Bulk send and branding", plan: "Business Pro" }] },
   finalCta: { title: "Your next signature takes two minutes.", sub: "Upload, place fields, send the links. No card, no envelope counter." },
   footer: [
@@ -29,6 +29,6 @@ export const site: Site = {
     { title: "Open source", links: [{ label: "GitHub", href: GH }, { label: "Apache-2.0 license", href: GH + "/blob/main/LICENSE" }] },
     { title: "More IsDead apps", links: [{ label: "CalendlyIsDead", href: "/calendlyisdead" }, { label: "CanvaIsDead", href: "/canvaisdead" }, { label: "TypeformIsDead", href: "/typeformisdead" }, { label: "GrammarlyIsDead", href: "/grammarlyisdead" }] },
   ],
-  trademark: "DocuSignIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by DocuSign, Inc. DocuSign is a trademark of its owner. Signatures made with this software are simple electronic signatures, not qualified or advanced ones.",
+  trademark: "DocuSignIsDead is an independent open-source project. It is not affiliated with, endorsed by or sponsored by the original platform. All third-party trademarks belong to their respective owners. Signatures made with this software are simple electronic signatures, not qualified or advanced ones.",
   repo: GH,
 };

@@ -1,12 +1,11 @@
 "use client";
 import Link from "next/link";
+import { MarketingHeader, MarketingFooter } from "./MarketingChrome";
 import { useState } from "react";
 import data from "@/lib/dsPricingData.json";
 import "@/app/ds-pricing.css";
 
 // Pricing page laid out like docusign.com/products-and-pricing. Copy and feature rows follow the original; art is CSS and generic.
-const REPO = "https://github.com/tommy-muckstack/docusignisdead";
-const Mark = () => <svg width="22" height="22" viewBox="0 0 24 24" aria-hidden><rect width="24" height="24" rx="6" fill="#4c00ff" /><path d="M6 17C9 8 11 8 12 13c1 4 3-1 6-6M5 19h14" fill="none" stroke="#fff" strokeWidth="1.7" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const Chk = () => <svg width="20" height="20" viewBox="0 0 24 24" aria-hidden><path d="M5 12.5l4.5 4.5L19 7.5" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const Down = ({ s = 20 }: { s?: number }) => <svg width={s} height={s} viewBox="0 0 24 24" aria-hidden><path d="M6 9l6 6 6-6" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" /></svg>;
 const Ico = ({ k }: { k: number }) => {
@@ -44,13 +43,10 @@ const cell = (v: string) => v === "Y" ? <span className="dp-y"><Chk /></span> : 
 export function DsPricing() {
   const [open, setOpen] = useState<Record<number, boolean>>({ 0: true });
   const [faq, setFaq] = useState<number | null>(null);
-  return <div className="dp">
-    <header className="dp-nav"><button className="dp-burger" aria-label="Menu"><i /><i /><i /></button>
-      <Link href="/" className="dp-logo"><Mark /><span>docusign<b>isdead</b></span></Link>
-      <nav><Link href="/pricing" className="on">Individuals + teams</Link><Link href="/pricing">Real estate</Link><a href={REPO}>Developers</a></nav>
-      <Link href="/login" className="dp-login">Log In</Link></header>
+  return <div className="dp" id="top">
+    <MarketingHeader />
     <section className="dp-hero">
-      <h1>Agreements made effortless</h1>
+      <h1>Agreements made effortless</h1><p className="dp-comparison-note">DocuSignIsDead is free. Paid plans below are reference comparisons; no subscription is sold here.</p>
       <div className="dp-bar">
         <div className="dp-tabs"><button type="button"><small>IAM + ESIGNATURE PLANS</small><span>Unlimited envelopes + AI</span></button><button type="button" className="on"><small>ESIGNATURE PLANS</small><span>eSignature essentials</span></button></div>
         <div className="dp-sel"><em>You’re saving up to 33%</em><button type="button"><small>Subscription Type</small><span>Annual | Billed monthly</span><Down /></button></div>
@@ -58,37 +54,30 @@ export function DsPricing() {
       <div className="dp-plans">{plans.map(p => <section key={p.name} className={"dp-plan" + (p.best ? " is-best" : "") + (p.light ? " is-light" : "")}>
         {p.best && <b className="dp-pop">MOST POPULAR</b>}
         <div className="dp-top"><h3>{p.name}</h3><p className="dp-blurb">{p.blurb}</p>
-          {p.price ? <div className="dp-price"><sup>$</sup><b>{p.price}</b><span><i>{p.per}</i><small>Annual | Billed monthly</small></span></div> : <a className="dp-tel" href="#">1 (877) 720-2040</a>}
-          <Link href={p.light ? "/pricing" : "/login"} className={"dp-buy" + (p.light ? " dp-buy--dark" : "")}>{p.cta}</Link>
+          {p.price ? <div className="dp-price"><sup>$</sup><b>{p.price}</b><span><i>{p.per}</i><small>Annual | Billed monthly</small></span></div> : <span className="dp-tel">Contact the project</span>}
+          <Link href={p.light ? "/contact" : "/login"} className={"dp-buy" + (p.light ? " dp-buy--dark" : "")}>{p.cta}</Link>
           {p.commit && <p className="dp-commit"><b>This is an annual commitment of {p.commit}.*</b><span>Additional tax may apply</span></p>}</div>
         <div className="dp-bot"><h4>{p.lead}</h4><ul>{p.feats.map((f, i) => <li key={i}><Ico k={i + (p.best ? 2 : 0) + (p.name === "Business Pro" ? 5 : p.light ? 8 : 0)} /><span>{f}</span></li>)}</ul>
-          <button type="button" className="dp-all">See All Features</button></div></section>)}</div>
+          <a className="dp-all" href="#features">See All Features</a></div></section>)}</div>
     </section>
     <section className="dp-unlock"><div><h2>Unlock (much) more agreement value with IAM</h2>
-      <p>Docusign Intelligent Agreement Management (IAM) is an AI-assisted platform that connects and optimizes every step of your agreement process. With an IAM plan, you can automate workflows without code, manage and analyze documents with AI, and seamlessly connect agreement data across systems.</p>
-      <Link href="/pricing" className="dp-iam">View IAM plans</Link>
+      <p>Commercial Intelligent Agreement Management (IAM) is an AI-assisted platform that connects and optimizes every step of your agreement process. With an IAM plan, you can automate workflows without code, manage and analyze documents with AI, and seamlessly connect agreement data across systems.</p>
+      <Link href="/products" className="dp-iam">View IAM plans</Link>
       <div className="dp-flow" aria-hidden><div className="n n1"><i /><b>Generate document</b><u /></div><div className="n n2"><i /><b>Collect information</b><u /></div><div className="n n3"><i /><b>Participants sign document</b><u /></div></div></div></section>
-    <section className="dp-cmp"><h2>Compare eSignature plan features</h2>
-      <div className="dp-head"><div /><>{plans.map(p => <div key={p.name}><h5>{p.name}</h5>{p.price ? <p><b>${p.price}</b>{p.per}</p> : <p />}<Link href={p.light ? "/pricing" : "/login"} className={"dp-buy dp-buy--s" + (p.light ? " dp-buy--dark" : "")}>{p.cta}</Link></div>)}</></div>
+    <section className="dp-cmp" id="features"><h2>Compare eSignature plan features</h2>
+      <div className="dp-head"><div /><>{plans.map(p => <div key={p.name}><h5>{p.name}</h5>{p.price ? <p><b>${p.price}</b>{p.per}</p> : <p />}<Link href={p.light ? "/contact" : "/login"} className={"dp-buy dp-buy--s" + (p.light ? " dp-buy--dark" : "")}>{p.cta}</Link></div>)}</></div>
       {groups.map(([g, sub, rows], gi) => <div key={g} className={"dp-grp" + (open[gi] ? " is-open" : "")}>
         <button type="button" className="dp-grp__h" aria-expanded={!!open[gi]} onClick={() => setOpen({ ...open, [gi]: !open[gi] })}>
           <span className="dp-grp__t"><Ico k={gi * 3} /><h4>{g}</h4><Down s={24} /></span><span className="dp-grp__s">{sub}</span></button>
         {open[gi] && <div className="dp-rows">{rows.map(([n, ...vs], ri) => <div key={n} className="dp-row"><span className="dp-rn"><u>{n}</u>{gi === 7 && <em>NEW</em>}</span>{vs.map((v, i) => <div key={i} className={v === "N" ? "n" : ""}>{cell(v)}</div>)}</div>)}</div>}</div>)}</section>
     <section className="dp-addon"><div><h2>Enhance your plan with these add-ons</h2><p>These can be added to your subscription once you purchase a Standard or Business Pro plan.</p>
-      <div className="dp-cards"><article><i className="a1" /><h3>Send with SMS</h3><p>Get signatures 65% faster with real-time notifications sent to your signers’ phones.</p><p className="s">Starting at $0.36/delivery (additional tax may apply)</p><Link href="/pricing">Learn More <svg width="6" height="10" viewBox="0 0 6 10" aria-hidden><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg></Link></article>
-        <article><i className="a2" /><h3>Verify recipient identity</h3><p>Enhance security and reduce risk by requiring recipients to confirm their identity.</p><p className="s">Starting at $2.40/ID verification attempt (additional tax may apply)</p><Link href="/pricing">Learn More <svg width="6" height="10" viewBox="0 0 6 10" aria-hidden><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg></Link></article></div></div></section>
+      <div className="dp-cards"><article><i className="a1" /><h3>Send with SMS</h3><p>Get signatures 65% faster with real-time notifications sent to your signers’ phones.</p><p className="s">Starting at $0.36/delivery (additional tax may apply)</p><Link href="/products">Learn More <svg width="6" height="10" viewBox="0 0 6 10" aria-hidden><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg></Link></article>
+        <article><i className="a2" /><h3>Verify recipient identity</h3><p>Enhance security and reduce risk by requiring recipients to confirm their identity.</p><p className="s">Starting at $2.40/ID verification attempt (additional tax may apply)</p><Link href="/products">Learn More <svg width="6" height="10" viewBox="0 0 6 10" aria-hidden><path d="M1 1l4 4-4 4" fill="none" stroke="currentColor" strokeWidth="1.5" /></svg></Link></article></div></div></section>
     <section className="dp-faq"><div><h2>eSignature plans and pricing FAQ</h2>
       <div className="dp-fq">{faqs.map(([q, a], i) => <div key={q} className={faq === i ? "is-open" : ""}><button type="button" aria-expanded={faq === i} onClick={() => setFaq(faq === i ? null : i)}><span>{q}</span><Down s={22} /></button>{faq === i && <p>{a}</p>}</div>)}</div></div></section>
     <section className="dp-curious"><div><div><h2>Curious about IAM plans?</h2><p>View our IAM plan line-up for unlimited envelopes, AI capabilities, and code-free custom workflows.</p>
-      <div className="dp-cbtn"><Link href="/pricing" className="w">View IAM Plans</Link><a href="#top" className="o">Back To Top</a></div></div><div className="dp-curious__art" aria-hidden><i /></div></div></section>
-    <footer className="dp-foot"><div>
-      <div className="dp-notes"><ul><li><p>* You may cancel your subscription within 30 days without penalty by selecting Cancel Subscription in your Account Settings. After that, you’ll be required to pay the remaining balance on your annual subscription, including any taxes.</p></li><li><p>Δ Additional fees may apply.</p></li><li><p>§ Subject to applicable <Link href="/pricing">Terms &amp; Conditions</Link>.</p></li></ul>
-      <ul><li><p>If you’re interested in learning about our advanced solutions or need more than 50 users, contact the project maintainers on <a href={REPO}>GitHub</a>.</p></li>
-        <li><p>The 30-day refund option does not apply: everything in DocuSignIsDead is free. Prices shown on this page are those of the products this project replaces, for comparison only.</p></li>
-        <li><p>The payments feature is not part of this project.</p></li><li><p>Plans, pricing and packaging on the original may be valid for new customers only.</p></li></ul></div>
-      <p className="dp-c">© 2026 DocuSignIsDead, open source under Apache-2.0.</p>
-      <div className="dp-addr"><p>Open source project, no postal address</p><p>General inquiries: <a href={REPO}>GitHub repository</a></p></div>
-      <div className="dp-legal"><span className="dp-ctry">United States<Down s={14} /></span><Link href="/pricing">Terms of Use</Link><Link href="/pricing">Privacy Notice</Link><Link href="/pricing">Your Privacy Choices</Link><Link href="/pricing">Notice to California Residents</Link><Link href="/pricing">Intellectual Property</Link></div></div></footer>
-    <button className="dp-assist"><svg width="18" height="18" viewBox="0 0 24 24" aria-hidden><path d="M12 3l2.2 5.8L20 11l-5.8 2.2L12 19l-2.2-5.8L4 11l5.8-2.2z" fill="none" stroke="#fff" strokeWidth="1.8" /></svg>Docusign Assistant</button>
+      <div className="dp-cbtn"><Link href="/products" className="w">View IAM Plans</Link><a href="#top" className="o">Back To Top</a></div></div><div className="dp-curious__art" aria-hidden><i /></div></div></section>
+    <div className="marketing-content"><p>DocuSignIsDead is free. These reference plans describe the paid product this project replaces, for comparison only. There is no subscription or payment collection here.</p></div>
+    <MarketingFooter />
   </div>;
 }
