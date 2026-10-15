@@ -1,3 +1,3 @@
-import { Landing } from "@/components/Landing";
+import { DsPricing } from "@/components/DsPricing";
 export const metadata = { title: "Pricing" };
-export default function Pricing() { return <Landing page="pricing" />; }
+export default function Pricing() { return <DsPricing />; }

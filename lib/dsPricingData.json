@@ -1,0 +1,547 @@
+[
+[
+"Accelerate your agreements with eSignature",
+"Fast-track the electronic signature process with envelope sends, mobile capabilities, audit trails, and reusable templates.",
+[
+[
+"Envelope sends",
+"5 per month",
+"100/user/year",
+"100/user/year",
+"Custom limit"
+],
+[
+"Signing workflow",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Basic fields",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Real-time audit trail",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Multiple languages (44+ signing)",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Notifications and reminders",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Top-rated mobile app",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Mobile-responsive signing",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Reporting",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Reusable templates",
+"Y",
+"Y",
+"Y",
+"Y"
+]
+]
+],
+[
+"Deliver professional signing experiences",
+"Enable efficient agreement processes with collaborative commenting, scheduled sending, pre-filled fields, and a value calculator.",
+[
+[
+"Customized branding",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Collaborative commenting",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Scheduled sending",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"In-person signing",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Pre-filled fields",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Value calculator",
+"N",
+"Y",
+"Y",
+"Y"
+]
+]
+],
+[
+"Manage access and permissions",
+"Manage permission setting and document access across your organization.",
+[
+[
+"Add multiple users",
+"Single user",
+"Up to 50 users",
+"Up to 50 users",
+"50+ users"
+],
+[
+"User and group permissions",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Team reports",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Shared templates",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Shared documents and folders",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Delegated signing",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Custody transfer",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"Access management & SSO",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Organization management",
+"N",
+"N",
+"N",
+"Contact sales"
+]
+]
+],
+[
+"Streamline workflows and documents",
+"Optimize your workflows with bulk send, templates, payment collection, web forms, and more.",
+[
+[
+"Locked templates",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Form fields: drop-down, radio",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Drawing fields",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Payment collection",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Signer attachments",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"PowerForms",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Bulk Send",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Envelope custom fields",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Web Forms",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Agreement actions",
+"N",
+"N",
+"Y",
+"Contact sales"
+],
+[
+"Multi-channel delivery",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Docusign Gen for Salesforce",
+"N",
+"N",
+"N",
+"Contact sales"
+]
+]
+],
+[
+"Drive trust and security",
+"Enhance security at scale and provide your customers with peace of mind.",
+[
+[
+"Used in 180+ countries",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Certificate of completion & electronic record disclosure",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"ISO 27001",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"SOC 2 Type II",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"WCAG 2.0 Level AA",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"eIDAS",
+"SeS",
+"SeS",
+"SeS",
+"AeS, SeS, QeS"
+],
+[
+"GDPR",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Email access codes",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Managed stamps",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"SMS & phone authentication",
+"N",
+"N",
+"Contact sales",
+"Contact sales"
+],
+[
+"Knowledge-based authentication",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"ID verification authentication",
+"N",
+"5 (one-time trial bonus)",
+"5 (one-time trial bonus)",
+"Contact sales"
+],
+[
+"Data residency",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"HIPAA support through BAA",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"FedRAMP moderate authorization & DOD IL4 (for eSignature and CLM)",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"21 CFR part 11",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Docusign Monitor",
+"N",
+"N",
+"N",
+"Contact sales"
+]
+]
+],
+[
+"Build with integrations and APIs",
+"Extend your workflows with a robust App Center, 1000+ partner integrations, industry-leading APIs, and seamless connections to cloud storage.",
+[
+[
+"Developer account",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Industry-leading APIs",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Cloud storage integrations: Google Drive, OneDrive, Dropbox, Box",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Productivity integrations: Google Workspace, Microsoft 365",
+"Y",
+"Y",
+"Y",
+"Y"
+],
+[
+"Workplace integrations: Slack, Microsoft Teams, Zoom, Stripe",
+"N",
+"Y",
+"Y",
+"Y"
+],
+[
+"1000+ partner integrations",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Integrations to Salesforce, Microsoft Dynamics, and Netsuite",
+"N",
+"N",
+"N",
+"Contact sales"
+]
+]
+],
+[
+"Apply advanced customization",
+"Leverage advanced features like conditional routing, document visibility, and remote notarization.",
+[
+[
+"Document retention policies",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Conditional routing",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Supplemental documents",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Signing groups",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"eWitness",
+"N",
+"N",
+"Y",
+"Y"
+],
+[
+"Document visibility",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Remote online notary",
+"N",
+"N",
+"N",
+"Contact sales"
+],
+[
+"Delayed routing",
+"N",
+"N",
+"N",
+"Contact sales"
+]
+]
+],
+[
+"Enable Intelligent Agreement Management (IAM)",
+"Unlock agreement value with automated workflows, and AI search, management and insights. Also comes with unlimited envelope sends!",
+[
+[
+"Agreement Manager documents",
+"N",
+"N",
+"N",
+"Y"
+],
+[
+"Workflow Builder",
+"N",
+"N",
+"N",
+"Y"
+]
+]
+]
+]
