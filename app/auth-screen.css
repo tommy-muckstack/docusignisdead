@@ -24,3 +24,25 @@
 .dsa-copy{width:560px;text-align:right;font-size:10.5px}
 .dsa-cfg{position:absolute;left:16px;bottom:62px;margin:0;font-size:11px;color:#8a8a8a}
 @media (max-width:760px){.dsa-card{width:calc(100% - 24px);padding:40px 24px}.dsa-stage{top:120px}.dsa-foot{flex-wrap:wrap;height:auto;padding:12px}.dsa-pw,.dsa-copy{width:auto}}
+/* Phone layout measured from account.docusign.com at 390px: no card, white page, left-aligned form, stacked footer. */
+@media (max-width:600px){
+.dsa{background:#fff;min-height:844px}
+.dsa-head{padding:0 26px;border-bottom:1px solid #e6e6e8}
+.dsa-stage{position:static}
+.dsa-card{width:100%;border:0;height:auto;padding:22px 32px 0;background:#fff}
+.dsa-card h1{font-weight:400;font-size:24px;line-height:33px;letter-spacing:0;color:rgba(19,0,50,.9)}
+.dsa-card p{margin:32px 0 0;font-weight:400;font-size:16px;line-height:24px;color:rgba(19,0,50,.9)}
+.dsa-card label{margin:31px 0 0;font-weight:500;font-size:14px;line-height:19.6px;color:rgba(19,0,50,.9)}.dsa-card label.p{margin-top:20px}
+.dsa-card label em{color:#c70547}
+.dsa-in{margin-top:4px;height:48px;border-radius:4px;font-size:16px;padding:0 16px}.dsa-in:focus{border:1px solid #37039e;padding:0 16px}
+.dsa-next{margin-top:32px;height:48px;border-radius:4px;background:#260559;font-size:16px;font-weight:500}
+.dsa-up{margin-top:16px;height:48px;border-radius:4px;background:rgba(19,0,50,.05);font-size:16px;font-weight:500;color:rgba(19,0,50,.9)}
+.dsa-alt{margin-top:20px;padding:0 32px}
+.dsa-foot{position:absolute;left:0;right:0;bottom:0;height:99.2px;box-sizing:border-box;display:block;padding:7px 24px 0;border-top:1px solid #ccc;font-size:10px;line-height:12px}
+.dsa-pw{display:flex;width:auto;font-size:10px;line-height:14px;margin-bottom:12px;gap:3px;align-items:center}
+.dsa-mid{display:flex;flex-wrap:wrap;align-items:center;font-size:10px;line-height:14px;margin-right:0}
+.dsa-mid a{padding:0 8px;border-left:0;font-size:10px;line-height:14px;margin:0}.dsa-mid .dsa-sel{margin-right:2px}.dsa-mid .dsa-sel+a{margin-left:2px;padding-left:8px}
+.dsa-sel{height:20px;padding:0 7px;font-size:10px;font-weight:500;background:rgba(19,0,50,.05)}
+.dsa-copy{display:block;width:auto;text-align:left;font-size:10px;line-height:14px;margin-top:10px}
+.dsa-logo{position:relative;top:2px}
+}
