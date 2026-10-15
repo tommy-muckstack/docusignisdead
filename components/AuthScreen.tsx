@@ -28,11 +28,11 @@ export function AuthScreen({ config, demo, to, signup = false }: { config: Fireb
           {reset ? <button type="button" className="dsa-up" onClick={a.go("signin")}>Back to log in</button> : su ? <button type="button" className="dsa-up" onClick={a.go("signin")}>Log in instead</button> : <button type="button" className="dsa-up" onClick={a.go("signup")}>Sign Up for Free</button>}
         </form>
       </div>
-      <div className="dsa-alt">
+      {(a.step === 2 || su || a.demo) && <div className="dsa-alt">
         {!reset && <button type="button" onClick={a.google} disabled={a.busy}>Continue with Google</button>}
         {!su && !reset && <button type="button" onClick={a.go("reset")}>Forgot password?</button>}
         {a.demo && <button type="button" onClick={a.useDemo}>Use the demo account</button>}
-      </div>
+      </div>}
     </div>
     <footer className="dsa-foot">
       <span className="dsa-pw">Powered by <Mark s={9} /><b>docusign</b></span>
