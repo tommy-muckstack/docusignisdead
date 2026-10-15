@@ -42,7 +42,7 @@ export function canSign(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: 
 export function findByToken(e: Envelope, token: string) { return e.recipients.find(r => r.token === token); }
 export function signerView(e: Envelope, r: Recipient): SignerView {
   const c = canSign(e, r);
-  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer" }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
+  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer", consentedAt: r.consentedAt }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
     fields: e.fields.filter(f => f.recipientId === r.id), message: e.message, others: e.recipients.filter(x => x.id !== r.id).map(x => ({ name: x.name, status: x.status })) };
 }
 export const todayStr = (at = Date.now()) => new Date(at).toISOString().slice(0, 10);

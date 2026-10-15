@@ -1,0 +1,62 @@
+name: Parity verification
+on:
+  push:
+    branches: ['fix/parity-signing', 'fix/parity-verification']
+  create:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  verify:
+    if: github.event_name != 'create' || startsWith(github.ref, 'refs/heads/fix/parity-')
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    env:
+      NEXT_PUBLIC_BASE_PATH: /docusignisdead
+      DEMO_MODE: '1'
+      AUTH_SECRET: parity-ci-only-public-test-value
+      GUESTS: '0'
+      ISDEAD_DATA_DIR: /tmp/docusignisdead-parity-data
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24.12.0'
+          cache: npm
+      - run: npm ci
+      - run: npm run lint
+      - run: npm run typecheck
+      - run: npm test
+      - run: npm run build
+      - run: npx playwright install --with-deps chromium
+      - name: Start app
+        run: |
+          npm run start -- --hostname 127.0.0.1 --port 3218 > /tmp/parity-server.log 2>&1 &
+          for attempt in $(seq 1 30); do
+            curl -fsS http://127.0.0.1:3218/docusignisdead > /dev/null && break
+            sleep 1
+          done
+      - run: npm run test:browser
+      - name: Baseline screenshots
+        if: always()
+        run: |
+          git worktree add /tmp/parity-baseline a02d30e523745265869dde45fe374e85a0a97ac4
+          ln -s "$GITHUB_WORKSPACE/node_modules" /tmp/parity-baseline/node_modules
+          cd /tmp/parity-baseline
+          npm run build
+          ISDEAD_DATA_DIR=/tmp/docusignisdead-baseline-data npm run start -- --hostname 127.0.0.1 --port 3219 > /tmp/parity-baseline.log 2>&1 &
+          cd "$GITHUB_WORKSPACE"
+          node scripts/parity-baseline.mjs
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: parity-browser-evidence
+          path: |
+            test-results
+            playwright-report
+            /tmp/parity-server.log
+            /tmp/parity-baseline.log
+          retention-days: 14
