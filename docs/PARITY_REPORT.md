@@ -69,3 +69,9 @@ Validation: lint, typecheck, 20 unit tests and production build passed. Browser 
 Finding #9: owner-scoped folders now support create/rename/delete and moving agreements; deleting a folder keeps its documents. Search matches titles and recipient names/emails, with status/date/folder filters and explicit empty results. Row actions include edit/view, PDF download, rename drafts, Void, and Delete with confirmation. Deletion removes recipient token indices and saved values too. Atomic file replacement, serialized local mutations, and Firestore transactions protect concurrent edits. The local server is a single-process development store; production uses Firestore transactions.
 
 Validation: 23 tests passed, including concurrent mutations, folder ownership and delete semantics, plus lint/typecheck/build. Exact reference columns/empty states and real-browser screenshots remain unverified.
+
+## Templates implementation
+
+Findings #11–#13: `/app/templates` now lists, searches, edits and deletes saved PDF templates. Placeholder roles own fields; Use template creates an independent draft with fresh recipient/field IDs and private tokens, retaining role labels for the sender to fill. Templates are excluded from agreements/reports and cannot be sent directly. Autosaves now serialize, and Send/Use/Save explicitly await the latest snapshot instead of sleeping for a fixed delay.
+
+Validation: lint, typecheck, 24 unit tests and build passed, including template ownership, role/field mapping, fresh token generation and independent PDF retention after template deletion. Browser drag/resize/upload verification is included in the forthcoming browser suite.
