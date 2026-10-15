@@ -1,7 +1,7 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter } from "next/navigation";
+import { useRouter, useSearchParams } from "next/navigation";
 import type { Envelope } from "@/lib/esign/types";
 import { SAMPLES } from "@/lib/esign/sample-data";
 import { statusSummary } from "@/lib/esign/logic";
@@ -9,6 +9,8 @@ import { BP } from "@/lib/basepath";
 const LABEL = { draft: "Draft", sent: "Out for signature", completed: "Completed", voided: "Voided" } as const;
 export function Dashboard() {
   const [list, setList] = useState<Envelope[] | null>(null); const [open, setOpen] = useState(false); const [busy, setBusy] = useState(false); const [err, setErr] = useState(""); const [filter, setFilter] = useState<"all" | Envelope["status"]>("all");
+  const params = useSearchParams();
+  useEffect(() => { if (params.get("start")) setOpen(true); }, [params]);
   const router = useRouter(); const file = useRef<HTMLInputElement>(null);
   const load = useCallback(async () => { const r = await fetch(`${BP}/api/envelopes`); setList(r.ok ? (await r.json()).envelopes : []); }, []);
   useEffect(() => { load(); }, [load]);
@@ -16,7 +18,7 @@ export function Dashboard() {
   const del = async (e: Envelope) => { if (!confirm(`Delete “${e.title}”?`)) return; await fetch(`${BP}/api/envelopes/${e.id}`, { method: "DELETE" }); load(); };
   const counts = { draft: 0, sent: 0, completed: 0, voided: 0 }; list?.forEach(e => counts[e.status]++);
   const shown = (list ?? []).filter(e => filter === "all" || e.status === filter);
-  return <main className="tfd"><div className="tfd__head"><h1 className="ids-h1" style={{ fontSize: "var(--ids-type-3xl)" }}>Documents</h1><button className="ids-btn ids-btn--primary" onClick={() => setOpen(true)}>Start</button></div>
+  return <main className="tfd"><div className="tfd__head"><h1 className="ids-h1" style={{ fontSize: "var(--ids-type-3xl)" }}>Agreements</h1><button className="ids-btn ids-btn--primary" onClick={() => setOpen(true)}>Start</button></div>
     <div className="tb" style={{ marginBottom: 16 }} role="tablist">{(["all", "draft", "sent", "completed", "voided"] as const).map(f => <button key={f} role="tab" aria-selected={filter === f} className={"iconbtn" + (filter === f ? " on" : "")} onClick={() => setFilter(f)}>{f === "all" ? `All ${list?.length ?? 0}` : `${LABEL[f]} ${counts[f]}`}</button>)}</div>
     {list === null && <p className="ids-muted">Loading…</p>}
     {list?.length === 0 && <div className="ids-card" style={{ padding: 40, textAlign: "center" }} data-testid="empty"><h2>Send your first document</h2><p className="ids-muted">Upload a PDF or start from a sample, add the people who need to sign, and share their links.</p><button className="ids-btn ids-btn--primary" onClick={() => setOpen(true)}>Start</button></div>}

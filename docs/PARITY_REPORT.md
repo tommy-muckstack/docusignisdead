@@ -1,6 +1,6 @@
 # DocuSignIsDead parity report
 
-Updated 2026-10-15. Source baseline: `a02d30e` (local `main`). Remote freshness could not be checked because GitHub DNS/API access fails in this execution environment.
+Updated 2026-10-15. Source baseline: `a02d30e` (local `main`). GitHub connector verified remote main is still `a02d30e`; command-line DNS remains unavailable.
 
 ## Evidence and limits
 
@@ -57,3 +57,9 @@ Final image-edit prompt: “Precise cleanup of this website icon. Keep exactly t
 Run `npm run build`, then `npm run start -- --hostname 127.0.0.1 --port 3218` in a separate terminal. Run `npm run test:browser`. Desktop is 1440×900; mobile is 390×844. Set `PARITY_BASE_URL` to test an isolated deployed preview. Tests capture screenshots in `test-results` and check actual click/fill/select interactions, duplicate navigation, branding, links, icon responses and viewport overflow.
 
 Capture equivalent baseline shots from `a02d30e` in an isolated checkout before attaching before/after pairs to the PR. Never call HTTP response inspection a real-browser check. Live Firebase signup/reset/Google login, transactional delivery, real signed-in trial comparison, and the full signing matrix still require separate completion evidence.
+
+## App shell implementation
+
+Findings #10, #11 (Templates follows in its own PR), #18: Agreements, Reports, Contacts, Profile, and Account Settings now have real routes. Reports use actual account events and counts. Contacts and profile/default settings persist per account. The avatar opens profile/settings/password/sign-out actions; password reset uses the existing Firebase provider with an explicit unavailable state for guest/demo/unconfigured accounts. The app navigation remains available at 390px. No payment or credential configuration changed.
+
+Validation: lint, typecheck, 20 unit tests and production build passed. Browser interactions/screenshots remain pending because of the host browser launch failure. The functional specification is implemented from the supplied requests; signed-in reference parity has not been established.
