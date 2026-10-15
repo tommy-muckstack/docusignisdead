@@ -44,10 +44,10 @@ export function AppShell({ user, cfg, children }: { user: { name: string; email:
         {cfg.search && <label className="as-search"><Ic n="search" s={16} /><input placeholder={cfg.search} aria-label="Search" /></label>}
         <div className="as-right">
           {cfg.right?.map(r => <Link key={r.label} href={r.href} className={"as-btn" + (r.solid ? " solid" : "")}>{r.label}</Link>)}
-          <span className="as-me" title={user.guest ? "Guest · sign in to keep your work" : user.demo ? "Demo account" : user.email}>{initial}</span>
-          <form method="post" action={`${BP}/api/session/logout`}><button className="as-out">Sign out</button></form>
+          <details className="as-account"><summary className="as-me" aria-label="Account menu">{initial}</summary><div className="as-account-menu"><b>{user.name}</b><span>{user.guest ? "Guest session" : user.demo ? "Demo account" : user.email}</span><Link href="/app/profile">My profile</Link><Link href="/app/settings">Account settings</Link><Link href="/app/profile#password">Password</Link><form method="post" action={`${BP}/api/session/logout`}><button className="as-out">Sign out</button></form></div></details>
         </div>
       </header>
+      <nav className="as-mobile-nav" aria-label="App navigation">{cfg.items.map(nav)}</nav>
       <div className="as-body">{children}</div>
     </div>
   </div>;
