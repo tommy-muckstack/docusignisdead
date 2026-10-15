@@ -46,3 +46,7 @@
 .dsa-copy{display:block;width:auto;text-align:left;font-size:10px;line-height:14px;margin-top:10px}
 .dsa-logo{position:relative;top:2px}
 }
+
+/* Flow content must grow with errors, the password step and the footer. */
+.dsa{display:flex;flex-direction:column;min-height:100dvh}.dsa-stage{position:static;padding:clamp(40px,10vh,120px) 0 64px;flex:1}.dsa-card{height:auto;min-height:380px;padding-bottom:40px;max-width:calc(100% - 32px)}.dsa-foot{position:static;height:auto;flex-wrap:wrap;gap:16px;padding:20px 24px}.dsa-pw,.dsa-copy{width:auto}.dsa-mid{flex-wrap:wrap;gap:12px}.dsa-mid a{border:0;padding:0}.dsa-cfg{position:static;margin:24px;text-align:center}.dsa-up{display:flex;align-items:center;justify-content:center;text-decoration:none}.dsa-edit{border:0;background:transparent;text-align:left;font-size:13px;color:#4c00ff;padding:8px 0;cursor:pointer}.dsa-card p.dsa-terms{font-size:12px;line-height:1.6;margin:20px 0 0}.dsa-disclaimer{flex-basis:100%;font-size:11px;line-height:1.6;margin:0;max-width:1100px}.dsa-card .trial-country{justify-content:flex-start;flex-wrap:wrap;margin-top:20px}.dsa-card .trial-country select{max-width:100%}
+@media(max-width:600px){.dsa-stage{padding:20px 0 40px}.dsa-card{padding:22px 24px 32px;max-width:100%;min-height:0}.dsa-foot{display:flex}.dsa-card h1{font-size:23px}.dsa-card p{margin-top:24px}}

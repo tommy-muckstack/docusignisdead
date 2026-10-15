@@ -94,3 +94,6 @@
  .dp-foot{height:932px;padding:0 16px 24px}.dp-notes{height:auto;padding-top:48px}.dp-legal{flex-wrap:wrap;gap:16px 32px;height:auto;margin-top:24px}.dp-ctry{width:100%}
  .dp-assist{position:absolute;right:16px;top:790px;height:40px;font-size:13px;padding:0 14px}
 }
+
+.dp-comparison-note{text-align:center;max-width:700px;margin:24px auto!important;font-size:14px}.dp-all{display:flex;align-items:center;justify-content:center}.dp .marketing-content{min-height:0}.dp .marketing-footer p{margin-top:40px}.dp .marketing-footer h2{font-weight:700}
+@media(max-width:900px){.dp-unlock,.dp-unlock>div,.dp-addon>div,.dp-curious,.dp-curious>div{height:auto;min-height:0}.dp-unlock>div,.dp-addon>div{padding:64px 24px}.dp-cmp{display:block;padding:48px 16px;overflow-x:auto}.dp-cmp h2{font-size:32px;line-height:1.2;text-align:left}.dp-head,.dp-row{grid-template-columns:200px repeat(4,200px);min-width:1000px}.dp-grp{min-width:1000px}.dp-cards{margin-top:40px}.dp-cards article{height:auto;min-height:350px}.dp-curious>div{padding:48px 24px}.dp-top,.dp-plan.is-best .dp-top{height:auto;padding-bottom:24px}}

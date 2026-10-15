@@ -36,7 +36,8 @@ export async function signInWithGoogle(config: FirebaseClientConfig, sessionUrl:
 }
 export async function resetPassword(config: FirebaseClientConfig, email: string) {
   const { sendPasswordResetEmail } = await import("firebase/auth");
-  await sendPasswordResetEmail(await clientAuth(config), email);
+  try { await sendPasswordResetEmail(await clientAuth(config), email); }
+  catch (error) { if ((error as { code?: string }).code !== "auth/user-not-found") throw error; }
 }
 /** Human-friendly message for a Firebase Auth error. */
 export function authErrorMessage(e: any): string {

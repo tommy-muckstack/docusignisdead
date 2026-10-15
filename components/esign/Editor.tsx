@@ -22,7 +22,7 @@ export function Editor({ initial }: { initial: Envelope }) {
     timer.current = setTimeout(async () => { const r = await fetch(`${BP}/api/envelopes/${env.id}`, { method: "PUT", headers: { "content-type": "application/json" }, body: JSON.stringify({ title: env.title, message: env.message, sequential: env.sequential, recipients: env.recipients, fields: env.fields }) });
       if (!r.ok) { setSave("error"); return; } const { envelope } = await r.json(); setSave("saved"); // adopt server-issued tokens for new recipients without clobbering in-flight edits
       setEnv(cur => ({ ...cur, recipients: cur.recipients.map((c, i) => ({ ...c, token: envelope.recipients.find((q: any) => q.id === c.id)?.token ?? c.token, order: i + 1 })) })); }, 600);
-    return () => clearTimeout(timer.current); // eslint-disable-next-line react-hooks/exhaustive-deps
+    return () => clearTimeout(timer.current);
   }, [env.title, env.message, env.sequential, env.recipients.map(r => r.id + r.name + r.email).join("|"), JSON.stringify(env.fields), draft]);
   const addRecipient = () => { const id = rid("r_"); patch(e => ({ ...e, recipients: [...e.recipients, { id, name: "", email: "", order: e.recipients.length + 1, token: "", status: "pending" }] })); setActive(id); };
   const delRecipient = (id: string) => { patch(e => ({ ...e, recipients: e.recipients.filter(r => r.id !== id).map((r, i) => ({ ...r, order: i + 1 })), fields: e.fields.filter(f => f.recipientId !== id) })); setActive(a => (a === id ? "" : a)); };

@@ -9,7 +9,9 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "test": "vitest run tests/unit",
-    "shots": "node scripts/shots.mjs"
+    "shots": "node scripts/shots.mjs",
+    "lint": "eslint app components lib site.config.ts --max-warnings=0",
+    "test:browser": "playwright test"
   },
   "dependencies": {
     "@google-cloud/firestore": "^9.3.1",
@@ -26,6 +28,9 @@
     "@types/node": "^22",
     "@types/react": "^19",
     "@types/react-dom": "^19",
+    "@typescript-eslint/parser": "^8.71.2",
+    "eslint": "^9.39.5",
+    "eslint-plugin-react-hooks": "^5.2.0",
     "typescript": "^5",
     "vitest": "^5.0.4"
   },
