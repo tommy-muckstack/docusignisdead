@@ -11,7 +11,7 @@ export type Envelope = {
   id: string; ownerId: string; title: string; status: EnvStatus; createdAt: number; updatedAt: number;
   pages: { w: number; h: number }[]; recipients: Recipient[]; fields: Field[]; events: EnvEvent[];
   /** Sequential routing: recipient n+1 can only sign after recipient n. */
-  sequential: boolean; message: string; voidReason?: string;
+  sequential: boolean; message: string; voidReason?: string; folderId?: string;
 };
 /** What a signer is allowed to see (never other recipients' tokens). */
 export type SignerView = {
