@@ -8,11 +8,13 @@ The supplied QA findings are implemented as functional requirements. The real si
 
 Local validation: lint, typecheck, production build and **36 unit/integration tests pass**. Tests use isolated temporary storage and synthetic `.test` addresses. Email provider calls are mocked. No actual email, real envelope or real person’s document has been sent/signed. No environment files or secrets were read, changed or committed. Payment behavior is unchanged.
 
-A real-browser suite covers desktop 1440×900 and mobile 390×844, including actual click/fill/select/pointer events. GitHub Actions is configured to run that suite in fresh Chromium and collect after screenshots, traces, server logs and baseline screenshots from `a02d30e`. The first CI browser run passed 14/20 checks, including all public desktop/mobile checks, Type/Draw signing with required fields, saved progress, PDF completion, Void, decline and Delete. It found ambiguous test selectors and a stale template editor view; fixes and an added CC/viewer routing case are awaiting a fresh run. Screenshot review remains pending. The baseline shots compare the old clone with the new clone, not with the signed-in reference product.
+A real-browser suite covers desktop 1440×900 and mobile 390×844, including actual click/fill/select/pointer events. [GitHub Actions run 38796271097](https://github.com/tommy-muckstack/docusignisdead/actions/runs/38796271097) passed lint, typecheck, production build, **36 unit/integration tests and all 22 browser tests**, testing commit `1adf2d60a82be9f2f821ce3324ff748daaa15a06`. Coverage includes public routes/assets/overflow, contacts/settings, folders, template persistence, field drag/resize, Type/Draw and required fields, saved progress, ordered signer/CC/viewer routing, PDF completion, Void, decline and Delete. The initial run exposed ambiguous selectors and a stale template editor view; both were corrected before this passing run.
+
+Desktop and mobile contact sheets were visually reviewed for the landing/login/pricing pages, agreements, template/send editors, disclosure, drawn signature and completion screen. Permanent [desktop](evidence/parity-desktop.png) and [mobile](evidence/parity-mobile.png) sheets are included here. Full-resolution before/after screenshots, the HTML browser report and server logs are in the [parity-browser-evidence artifact](https://github.com/tommy-muckstack/docusignisdead/actions/runs/38796271097/artifacts/12001289485), retained until 2026-10-29. Screenshots named `*-before.png` use baseline `a02d30e`; `*-after.png` use the tested implementation. These compare the old clone with the new clone, not with the signed-in reference product. Full-page captures can place sticky navigation at the scroll position reached during the interaction.
 
 ## Findings
 
-“Implemented” means the code and relevant local checks pass; the browser and live-service limits above still apply.
+"Implemented" means the code and relevant local/CI checks pass; the reference-account and live-service limits above still apply.
 
 | # | Status | Result |
 |---|---|---|
@@ -32,7 +34,7 @@ A real-browser suite covers desktop 1440×900 and mobile 390×844, including act
 | 14 | Implemented; live provider pending | Resend requests and completion PDF copies; durable idempotent retries; clear unavailable/failed delivery text and private-link fallback. Manual reminders after the chosen interval; expiry enforced on signing/PDF access. |
 | 15 | Implemented | Versioned server-recorded consent before PDF access, Start/Next guidance, Type/Draw, required text/checkbox/initials/date, saved progress/Resume, decline, completion PDF and complete paginated certificate/audit trail. Sequential and parallel submissions preserve every signature. |
 | 16 | Fixed | Branded 404 with navigation, tombstone, Page not found help and working recovery links. HTTP status remains 404. |
-| 17 | Implemented; browser/console pending | Icons/manifests exist; signed-out app entry redirects to login, even if guests are configured. Responsive navigation/editor/PDF layout. Original missing resource cannot be identified from the report alone; browser checks assert resources/page errors and mobile overflow. |
+| 17 | Fixed in tested routes | Icons/manifests exist; signed-out app entry redirects to login, even if guests are configured. Responsive navigation/editor/PDF layout. Public resource/page-error checks and desktop/mobile flows pass. The report did not identify the original missing resource; live deployment and reference-site console checks remain external verification. |
 | 18 | Implemented | Avatar opens profile, settings, password-reset and sign-out actions. Guest/demo/unconfigured password behavior is explicit. |
 
 ## Delivery and reminders
@@ -59,7 +61,7 @@ The supplied `Black Tombstone with Transparent X.png` was recolored through imag
 | `fix/parity-send-flow` | templates | #12–#14, roles/delivery/reminders/expiry |
 | `fix/parity-signing` | send flow | #15, signing integrity and browser acceptance suite |
 
-All review branches are published: [Marketing/auth #3](https://github.com/tommy-muckstack/docusignisdead/pull/3), [Hygiene #4](https://github.com/tommy-muckstack/docusignisdead/pull/4), [App shell #5](https://github.com/tommy-muckstack/docusignisdead/pull/5), [Agreements #6](https://github.com/tommy-muckstack/docusignisdead/pull/6), [Templates #7](https://github.com/tommy-muckstack/docusignisdead/pull/7), [Send #8](https://github.com/tommy-muckstack/docusignisdead/pull/8), [Signing/verification #2](https://github.com/tommy-muckstack/docusignisdead/pull/2). They remain drafts pending acceptance evidence. Nothing is merged.
+All review branches are published: [Marketing/auth #3](https://github.com/tommy-muckstack/docusignisdead/pull/3), [Hygiene #4](https://github.com/tommy-muckstack/docusignisdead/pull/4), [App shell #5](https://github.com/tommy-muckstack/docusignisdead/pull/5), [Agreements #6](https://github.com/tommy-muckstack/docusignisdead/pull/6), [Templates #7](https://github.com/tommy-muckstack/docusignisdead/pull/7), [Send #8](https://github.com/tommy-muckstack/docusignisdead/pull/8), [Signing/verification #2](https://github.com/tommy-muckstack/docusignisdead/pull/2). The complete-stack acceptance suite is green. PRs remain drafts because the external reference/account/inbox checks below are unverified. Nothing is merged.
 
 ## Remaining external verification
 
@@ -67,7 +69,7 @@ All review branches are published: [Marketing/auth #3](https://github.com/tommy-
 - Live Firebase signup, correct/incorrect re-login, reset email receipt and Google sign-in on this project using a throwaway account.
 - Actual transactional inbox delivery with an explicitly configured verified sender and throwaway recipients. The specified no-provider fallback is implemented and tested.
 - Cloud Firestore transaction integration (local concurrency behavior is tested; credentials were not used).
-- Browser checks/screenshots must pass in CI before claiming visual acceptance. Any failed checks must be resolved, not marked as product exceptions.
+- Live deployment and reference-site console checks. Isolated Chromium CI checks pass; no production deployment was changed.
 
 ## Sources and reproduction
 
