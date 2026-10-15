@@ -1,4 +1,6 @@
 import Link from "next/link";
+import { PricingBody } from "@/components/PricingBody";
+import { pricingCfg } from "@/components/pricingCfg";
 import "@/app/landing.css";
 
 // Home page in the layout, type scale and palette of docusign.com. Copy, marks and artwork are our own.
@@ -21,8 +23,8 @@ const foot: [string, string[]][][] = [
   [["COMPANY", ["About us", "Product releases", "Open-source roadmap", "Careers", "Leadership", "News", "Investors", "Contact us", "Accessibility"]]],
 ];
 
-export function Landing() {
-  return <div className="ds">
+export function Landing({ page }: { page?: "pricing" } = {}) {
+  return <div className={"ds" + (page === "pricing" ? " is-pr" : "")}>
     <div className="ds-util"><a className="ds-util__l" href={REPO}><b>NEW</b>Open source and self-hostable, with unlimited envelopes <Arrow /></a>
       <nav><span>Sales 1-800-555-0100</span><button>Search</button><a href={REPO}>Support</a><Link href="/login">Access Documents</Link><Link href="/login">Log In</Link></nav></div>
     <header className="ds-nav"><Link href="/" className="ds-logo"><Mark /><span>docusign<b>isdead</b></span></Link>
@@ -70,6 +72,7 @@ export function Landing() {
       <div className="ds-dots"><i className="on" /><i /></div>
       <div className="ds-posts">{[["3 Practical Ways AI Can Smooth Out Customer Paperwork"], ["Meet the In-Browser PDF Editor and a Better Connected Signing Flow"], ["How to Build Signing Confidence Across Your Legal Team"]].map(([t], i) => <Link href="/pricing" key={i}><div className={"ds-post__img p" + i} aria-hidden><i /></div><small><b>Blog</b></small><h4>{t}</h4></Link>)}</div></section>
     <section className="ds-cta"><div><div><h2>DocuSignIsDead is the open agreement platform your business needs</h2><div className="ds-row"><Link className="ds-btn ds-btn--white ds-btn--lg" href="/login">Start for Free</Link><Link className="ds-btn ds-btn--solid2 ds-btn--lg" href="/pricing">Explore the platform</Link></div></div><div className="ds-cta__art" aria-hidden><i /></div></div></section>
+    {page === "pricing" && <PricingBody cfg={pricingCfg} />}
     <footer className="ds-foot"><div className="ds-foot__cols">{foot.map((col, i) => <div key={i}>{col.map(([h, ls]) => <section key={h}><p>{h}</p>{ls.map(l => <Link key={l} href={l.startsWith("Open-source") ? REPO : "/pricing"}>{l}</Link>)}</section>)}</div>)}</div></footer>
     <div className="ds-bar"><button className="ds-ctry">United States<Chev /></button><span className="ds-soc">{["f", "X", "▶", "in"].map(x => <a key={x} href={REPO} aria-label={x}>{x}</a>)}</span><span className="ds-apps"><a href={REPO}><i>GET IT ON</i><b>Google Play</b><small>★ 4.4</small></a><a href={REPO}><i>Download on the</i><b>App Store</b><small>★ 4.9</small></a></span></div>
     <div className="ds-legal"><nav><Link href="/pricing">Terms of Use</Link><Link href="/pricing">Privacy Notice</Link><Link href="/pricing">Notice to California Residents</Link><Link href="/pricing">Your Privacy Choices</Link><Link href="/pricing">Intellectual Property</Link><Link href="/pricing">Open Source License</Link></nav><span>© DocuSignIsDead 2026</span></div>

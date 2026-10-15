@@ -108,3 +108,6 @@
   .ds-legal{height:200px;padding:0}.ds-legal nav{position:absolute;left:24px;right:24px;top:24px;flex-wrap:wrap;gap:12px 24px}.ds-legal span{position:absolute;left:24px;right:auto;top:150px}
   .ds-assist{right:12px;height:48px;bottom:15px}
 }
+
+/* pricing page: hide home sections, keep header/footer */
+.ds.is-pr>section{display:none!important}
