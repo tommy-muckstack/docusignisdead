@@ -1,6 +1,6 @@
 # DocuSignIsDead parity report
 
-Updated 2026-10-15. Baseline: `a02d30e523745265869dde45fe374e85a0a97ac4`, verified against remote main through the connected GitHub tool. Seven stacked review branches; no merge or production deployment is authorized by this work.
+Updated 2026-10-15. Baseline: `a02d30e523745265869dde45fe374e85a0a97ac4`, verified against remote main through the connected GitHub tool. Seven stacked review branches. After implementation, the user authorized review and merging suitable PRs into main.
 
 ## Evidence and scope
 
@@ -61,7 +61,9 @@ The supplied `Black Tombstone with Transparent X.png` was recolored through imag
 | `fix/parity-send-flow` | templates | #12–#14, roles/delivery/reminders/expiry |
 | `fix/parity-signing` | send flow | #15, signing integrity and browser acceptance suite |
 
-All review branches are published: [Marketing/auth #3](https://github.com/tommy-muckstack/docusignisdead/pull/3), [Hygiene #4](https://github.com/tommy-muckstack/docusignisdead/pull/4), [App shell #5](https://github.com/tommy-muckstack/docusignisdead/pull/5), [Agreements #6](https://github.com/tommy-muckstack/docusignisdead/pull/6), [Templates #7](https://github.com/tommy-muckstack/docusignisdead/pull/7), [Send #8](https://github.com/tommy-muckstack/docusignisdead/pull/8), [Signing/verification #2](https://github.com/tommy-muckstack/docusignisdead/pull/2). The complete-stack acceptance suite is green. PRs remain drafts because the external reference/account/inbox checks below are unverified. Nothing is merged.
+All review branches are published: [Marketing/auth #3](https://github.com/tommy-muckstack/docusignisdead/pull/3), [Hygiene #4](https://github.com/tommy-muckstack/docusignisdead/pull/4), [App shell #5](https://github.com/tommy-muckstack/docusignisdead/pull/5), [Agreements #6](https://github.com/tommy-muckstack/docusignisdead/pull/6), [Templates #7](https://github.com/tommy-muckstack/docusignisdead/pull/7), [Send #8](https://github.com/tommy-muckstack/docusignisdead/pull/8), [Signing/verification #2](https://github.com/tommy-muckstack/docusignisdead/pull/2). The complete-stack acceptance suite is green. The PR links record their current merge status. External reference/account/inbox checks below remain unverified and are not represented as completed by a merge.
+
+Pre-merge review checked authentication/ownership boundaries, draft persistence, routing, consent, cancellation, PDF finalization and email retries. It found an autosave/navigation race: following an in-app link could unmount the editor before its debounce fired. Draft navigation now flushes pending edits before leaving and stays in the editor on save failure. The browser suite adds desktop/mobile regression coverage for both failure and successful retry.
 
 ## Remaining external verification
 
@@ -69,7 +71,7 @@ All review branches are published: [Marketing/auth #3](https://github.com/tommy-
 - Live Firebase signup, correct/incorrect re-login, reset email receipt and Google sign-in on this project using a throwaway account.
 - Actual transactional inbox delivery with an explicitly configured verified sender and throwaway recipients. The specified no-provider fallback is implemented and tested.
 - Cloud Firestore transaction integration (local concurrency behavior is tested; credentials were not used).
-- Live deployment and reference-site console checks. Isolated Chromium CI checks pass; no production deployment was changed.
+- Live deployment and reference-site console checks. Isolated Chromium CI checks pass; no production credentials or deployment settings were changed.
 
 ## Sources and reproduction
 

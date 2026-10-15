@@ -17,5 +17,27 @@ export function useDraftSave(env: Envelope) {
   }, [env.id]);
   useEffect(() => { if (env.status !== "draft" || content === saved.current) return; setState("saving"); timer.current = setTimeout(() => { flush().catch(() => {}); }, 600); return () => clearTimeout(timer.current); }, [content, env.status, flush]);
   useEffect(() => { const warn = (e: BeforeUnloadEvent) => { if (env.status === "draft" && latest.current !== saved.current) { e.preventDefault(); e.returnValue = ""; } }; window.addEventListener("beforeunload", warn); return () => window.removeEventListener("beforeunload", warn); }, [env.status]);
+  useEffect(() => {
+    if (env.status !== "draft") return;
+    let navigating = false;
+    const navigate = (event: MouseEvent) => {
+      if (event.defaultPrevented || event.button !== 0 || event.metaKey || event.ctrlKey || event.shiftKey || event.altKey || latest.current === saved.current) return;
+      const link = event.target instanceof Element ? event.target.closest("a[href]") : null;
+      if (!(link instanceof HTMLAnchorElement) || link.hasAttribute("download") || (link.target && link.target !== "_self")) return;
+      const target = new URL(link.href);
+      if (target.origin !== window.location.origin || (target.pathname === window.location.pathname && target.search === window.location.search)) return;
+      // Run before Next's Link handler can unmount this editor and cancel its save timer.
+      event.preventDefault(); event.stopImmediatePropagation();
+      if (navigating) return; navigating = true;
+      (async () => {
+        try {
+          do { await flush(); } while (latest.current !== saved.current);
+          window.location.assign(target.href);
+        } catch { navigating = false; /* flush exposes Save failed; leave the draft open for retry. */ }
+      })();
+    };
+    document.addEventListener("click", navigate, true);
+    return () => document.removeEventListener("click", navigate, true);
+  }, [env.status, flush]);
   return { state, flush };
 }

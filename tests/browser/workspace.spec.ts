@@ -45,6 +45,27 @@ test("folders, search, rename, move and delete preserve the right documents", as
   page.once("dialog", d => d.accept()); await page.getByRole("row").filter({ hasText: title + " renamed" }).getByRole("button", { name: "Delete", exact: true }).click(); await expect(page.getByRole("link", { name: title + " renamed", exact: true })).toHaveCount(0);
 });
 
+test("navigation saves pending draft edits and stays in the editor when saving fails", async ({ page, baseURL }, info) => {
+  await login(page, baseURL!); await upload(page, baseURL!, `Navigation ${info.project.name}`);
+  const editorURL = page.url(); const id = editorURL.split("/").pop()!;
+  await page.route(`**/api/envelopes/${id}`, async route => {
+    if (route.request().method() === "PUT") await route.fulfill({ status: 503, contentType: "application/json", body: JSON.stringify({ error: "Save temporarily unavailable" }) });
+    else await route.continue();
+  });
+  const title = `Saved before leaving ${info.project.name}`;
+  await page.getByLabel("Document title").fill(title);
+  await page.getByRole("link", { name: "← Agreements", exact: true }).click();
+  await expect(page.getByText("Save failed", { exact: true })).toBeVisible();
+  await expect(page).toHaveURL(editorURL);
+  await expect(page.getByLabel("Document title")).toHaveValue(title);
+  await page.unroute(`**/api/envelopes/${id}`);
+  await page.getByRole("link", { name: "Agreements", exact: true }).click();
+  await expect(page).toHaveURL(/\/app\/envelopes$/);
+  await expect(page.getByRole("link", { name: title, exact: true })).toBeVisible();
+  const saved = (await (await page.request.get(`${baseURL}/api/envelopes/${id}`)).json()).envelope;
+  expect(saved.title).toBe(title);
+});
+
 test("PDF templates save placeholder roles, create an independent draft and delete", async ({ page, baseURL }, info) => {
   await login(page, baseURL!); await page.goto(`${baseURL}/app/templates`); const title = `Template ${info.project.name}`;
   await page.getByLabel("Template PDF").setInputFiles({ name: title + ".pdf", mimeType: "application/pdf", buffer: pdf }); await expect(page).toHaveURL(/\/app\/templates\/e_/); await expect(page.getByTestId("pdf-pages")).toHaveAttribute("data-state", "ready");
