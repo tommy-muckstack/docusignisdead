@@ -9,8 +9,9 @@ Updated 2026-10-15. Source baseline: `a02d30e` (local `main`). Remote freshness 
 - A throwaway trial inbox and an inspectable browser session were requested. No account credentials or personal documents have been used. No emails or envelopes have been sent.
 - Chromium cannot launch: macOS `bootstrap_check_in … MachPortRendezvousServer … (141)`. Firefox exits with SIGABRT. These failures persist after permission escalation. The automated browser tests fail before any page interaction. Desktop/mobile screenshots have **not** been captured, and browser verification has **not** passed.
 - Local production HTTP checks pass for landing, pricing, login, signup, all nine new information pages, comparison, favicon, PNG icon, Apple touch icon, web manifest and both app icon sizes. Rendered public-page text contains no standalone original product name.
-- `npm run lint`, `npm run typecheck`, production build, and 19 unit tests passed during this work. Final checks must be repeated after further changes. Three new unit checks cover reset email enumeration and failure handling; they do not prove delivery or actual Firebase authentication.
+- `npm run lint`, `npm run typecheck`, production build, and 20 unit tests passed during this work. Final checks must be repeated after further changes. Three new unit checks cover reset email enumeration and failure handling; they do not prove delivery or actual Firebase authentication.
 - No environment files or secrets were read, changed or committed. Payment behavior remains unchanged.
+- In accordance with the new prompt, signed-out `/app` entry now redirects to login even when guest support is configured. Existing guest sessions remain valid; creating a new guest requires explicitly visiting the guest endpoint. A regression test protects this behavior. Production HTTP inspection confirmed the login redirect.
 
 ## Finding status
 
@@ -33,8 +34,8 @@ Updated 2026-10-15. Source baseline: `a02d30e` (local `main`). Remote freshness 
 | 13 | Existing implementation; pending browser | Recipient fields, autosave, drag and resize exist. Full interaction checks pending. |
 | 14 | Pending real-app walkthrough/provider | No delivery provider configured or changed; send remains link-based. |
 | 15 | Pending real-app walkthrough | Source already appends a completion certificate (`lib/esign/finalize.ts`); actual PDF QA, disclosure, guidance, decline, routing tests remain. |
-| 16 | Pending | Public branded 404 implementation is next. |
-| 17 | Partially implemented; browser pending | Real icon/favicon routes now exist. This does not establish which resource caused the original 404. Mobile layout and console acceptance pending. |
+| 16 | Implemented; browser pending | Shared project nav/footer, tombstone branding, Page not found help block and working home/login/support recovery links. Production HTTP confirms status 404 and the help text. |
+| 17 | Partially implemented; browser pending | Real icon/favicon routes now exist. This does not establish which resource caused the original 404. Signed-out entry requires login (unit regression + production HTTP check). Mobile layout and console acceptance pending. |
 | 18 | Pending real-app walkthrough | Avatar menu/profile work not started. |
 
 ## Branding instruction (added during work)
@@ -48,6 +49,7 @@ Final image-edit prompt: “Precise cleanup of this website icon. Keep exactly t
 ## Review branches and PRs
 
 - `fix/parity-marketing-auth`: findings #1–#8, shared branding/icons, and reproducible lint/browser-check setup. PR not open: GitHub access is unavailable, and required screenshot/browser evidence is pending. Nothing merged or deployed.
+- `fix/parity-public-hygiene` (stacked on marketing/auth): public branded 404 (#16), explicit login entry (#17), removal of obsolete duplicate mobile files (#2), accurate setup documentation and bounded build tracing. PR not open for the same access/evidence blockers.
 - Remaining logical areas will be separate branches/PRs after reference access. No empty PRs or unsupported claims of completion.
 
 ## Browser acceptance procedure
