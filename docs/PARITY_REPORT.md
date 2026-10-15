@@ -63,3 +63,9 @@ Capture equivalent baseline shots from `a02d30e` in an isolated checkout before 
 Findings #10, #11 (Templates follows in its own PR), #18: Agreements, Reports, Contacts, Profile, and Account Settings now have real routes. Reports use actual account events and counts. Contacts and profile/default settings persist per account. The avatar opens profile/settings/password/sign-out actions; password reset uses the existing Firebase provider with an explicit unavailable state for guest/demo/unconfigured accounts. The app navigation remains available at 390px. No payment or credential configuration changed.
 
 Validation: lint, typecheck, 20 unit tests and production build passed. Browser interactions/screenshots remain pending because of the host browser launch failure. The functional specification is implemented from the supplied requests; signed-in reference parity has not been established.
+
+## Agreements implementation
+
+Finding #9: owner-scoped folders now support create/rename/delete and moving agreements; deleting a folder keeps its documents. Search matches titles and recipient names/emails, with status/date/folder filters and explicit empty results. Row actions include edit/view, PDF download, rename drafts, Void, and Delete with confirmation. Deletion removes recipient token indices and saved values too. Atomic file replacement, serialized local mutations, and Firestore transactions protect concurrent edits. The local server is a single-process development store; production uses Firestore transactions.
+
+Validation: 23 tests passed, including concurrent mutations, folder ownership and delete semantics, plus lint/typecheck/build. Exact reference columns/empty states and real-browser screenshots remain unverified.

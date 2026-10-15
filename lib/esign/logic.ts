@@ -1,6 +1,6 @@
 import type { Envelope, Field, FieldType, Recipient, SignPayload, SignerView } from "./types";
 const FTYPES = new Set<FieldType>(["signature", "initials", "date", "text", "checkbox"]);
-export const rid = (p = "") => p + Array.from(crypto.getRandomValues(new Uint8Array(9)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % 32]).join("");
+export const rid = (p = "") => p + Array.from(crypto.getRandomValues(new Uint8Array(9)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % "abcdefghijkmnpqrstuvwxyz23456789".length]).join("");
 export const newToken = () => rid("t_") + rid();
 const str = (v: unknown, max: number) => (typeof v === "string" ? v.slice(0, max).trim() : "");
 const clamp = (n: unknown, lo: number, hi: number) => Math.min(hi, Math.max(lo, Number.isFinite(Number(n)) ? Number(n) : lo));

@@ -1,0 +1,14 @@
+import { beforeEach, afterEach, expect, it } from "vitest";
+import { mkdtemp, rm } from "node:fs/promises";
+import { tmpdir } from "node:os";
+import { join } from "node:path";
+import { mutateDoc, getDoc } from "@/lib/store";
+import { changeFolder, listFolders } from "@/lib/esign/folders";
+import { createEnvelope, getEnvelope, mutateEnvelope } from "@/lib/esign/server";
+import { emptyAccount, updateAccount } from "@/lib/account";
+let dir: string;
+beforeEach(async () => { dir = await mkdtemp(join(tmpdir(), "ds-organization-")); process.env.ISDEAD_DATA_DIR = dir; });
+afterEach(async () => { delete process.env.ISDEAD_DATA_DIR; await rm(dir, { recursive: true, force: true }); });
+it("serializes concurrent changes without losing updates", async () => { await Promise.all(Array.from({ length: 30 }, () => mutateDoc<number>("counter", "one", value => (value ?? 0) + 1))); expect(await getDoc("counter", "one")).toBe(30); });
+it("isolates folders by owner and preserves documents when deleting a folder", async () => { const [f] = await changeFolder("alice", { action: "create", name: "Contracts" }); expect(await listFolders("bob")).toEqual([]); const e = await createEnvelope("alice", { sample: "nda" }); await mutateEnvelope(e.id, x => ({ ...x, folderId: f.id })); await changeFolder("alice", { action: "rename", id: f.id, name: "Signed work" }); expect((await listFolders("alice"))[0].name).toBe("Signed work"); await changeFolder("alice", { action: "delete", id: f.id }); expect((await getEnvelope(e.id))?.folderId).toBeUndefined(); expect(await getEnvelope(e.id)).not.toBeNull(); });
+it("rejects duplicate contact emails and keeps server-assigned ids", () => { const a = updateAccount(emptyAccount(), { contact: { id: "forged", name: "A", email: "a@example.test" } }); expect(a.contacts[0].id).not.toBe("forged"); expect(() => updateAccount(a, { contact: { name: "B", email: "A@example.test" } })).toThrow("already"); });

@@ -8,7 +8,7 @@ import path from "node:path";
 const safe = (s: string) => s.replace(/[^a-zA-Z0-9_-]/g, "_").slice(0, 80);
 const firestoreEnabled = () => !!process.env["FIREBASE_SERVICE_ACCOUNT_JSON"];
 const appName = () => safe((process.env["NEXT_PUBLIC_BASE_PATH"] ?? "/app").replace(/\//g, "")) || "app";
-const CHUNK = 900_000;
+const CHUNK = 250_000; // Keep even non-ASCII JSON below the Firestore byte limit.
 
 // ---- Firestore ----
 let dbP: Promise<import("firebase-admin/firestore").Firestore> | null = null;
@@ -25,31 +25,19 @@ function db() {
 const colName = (col: string) => `${appName()}__${safe(col)}`;
 
 async function fsGet<T>(col: string, id: string): Promise<T | null> {
-  const c = (await db()).collection(colName(col)); const snap = await c.doc(safe(id)).get();
-  if (!snap.exists) return null;
-  const m = snap.data() as { d?: string; n?: number };
-  let json = m.d ?? "";
-  for (let i = 1; i < (m.n ?? 1); i++) json += ((await c.doc(`${safe(id)}~c${i}`).get()).data() as { d?: string } | undefined)?.d ?? "";
-  try { return JSON.parse(json) as T; } catch { return null; }
-}
-async function fsPut<T>(col: string, id: string, doc: T) {
-  const c = (await db()).collection(colName(col)); const json = JSON.stringify(doc); const n = Math.max(1, Math.ceil(json.length / CHUNK));
-  const old = (await c.doc(safe(id)).get()).data() as { n?: number } | undefined;
-  for (let i = 1; i < n; i++) await c.doc(`${safe(id)}~c${i}`).set({ d: json.slice(i * CHUNK, (i + 1) * CHUNK), part: true });
-  for (let i = n; i < (old?.n ?? 1); i++) await c.doc(`${safe(id)}~c${i}`).delete();
-  await c.doc(safe(id)).set({ d: json.slice(0, CHUNK), n, main: true, updatedAt: Date.now() });
+  const database = await db(); const c = database.collection(colName(col));
+  return database.runTransaction(async tx => {
+    const snap = await tx.get(c.doc(safe(id))); if (!snap.exists) return null;
+    const m = snap.data() as { d?: string; n?: number }; let json = m.d ?? "";
+    for (let i = 1; i < (m.n ?? 1); i++) json += (await tx.get(c.doc(`${safe(id)}~c${i}`))).data()?.d ?? "";
+    return JSON.parse(json) as T;
+  }, { readOnly: true });
 }
 async function fsList<T>(col: string): Promise<T[]> {
   const c = (await db()).collection(colName(col)); const snaps = await c.where("main", "==", true).get(); const out: T[] = [];
   for (const s of snaps.docs) { const v = await fsGet<T>(col, s.id); if (v !== null) out.push(v); }
   return out;
 }
-async function fsDel(col: string, id: string) {
-  const c = (await db()).collection(colName(col)); const m = (await c.doc(safe(id)).get()).data() as { n?: number } | undefined;
-  for (let i = 1; i < (m?.n ?? 1); i++) await c.doc(`${safe(id)}~c${i}`).delete();
-  await c.doc(safe(id)).delete();
-}
-
 // ---- local files (dev) ----
 const dir = () => process.env["ISDEAD_DATA_DIR"] ?? path.join(process.env["VERCEL"] ? "/tmp" : process.cwd(), ".data");
 async function fileGet<T>(col: string, id: string): Promise<T | null> {
@@ -57,7 +45,8 @@ async function fileGet<T>(col: string, id: string): Promise<T | null> {
 }
 async function filePut<T>(col: string, id: string, doc: T) {
   const d = path.join(dir(), safe(col)); await fs.mkdir(d, { recursive: true });
-  await fs.writeFile(path.join(d, safe(id) + ".json"), JSON.stringify(doc));
+  const target = path.join(d, safe(id) + ".json"); const temp = target + "." + crypto.randomUUID() + ".tmp";
+  await fs.writeFile(temp, JSON.stringify(doc)); await fs.rename(temp, target);
 }
 async function fileList<T>(col: string): Promise<T[]> {
   const d = path.join(dir(), safe(col));
@@ -68,9 +57,9 @@ async function fileList<T>(col: string): Promise<T[]> {
 async function fileDel(col: string, id: string) { try { await fs.unlink(path.join(dir(), safe(col), safe(id) + ".json")); } catch { /* ok */ } }
 
 export const getDoc = <T>(col: string, id: string): Promise<T | null> => (firestoreEnabled() ? fsGet<T>(col, id) : fileGet<T>(col, id));
-export const putDoc = <T>(col: string, id: string, doc: T): Promise<void> => (firestoreEnabled() ? fsPut(col, id, doc) : filePut(col, id, doc));
+export const putDoc = async <T>(col: string, id: string, doc: T): Promise<void> => { await mutateDoc<T>(col, id, () => doc); };
 export const listDocs = <T>(col: string): Promise<T[]> => (firestoreEnabled() ? fsList<T>(col) : fileList<T>(col));
-export const delDoc = (col: string, id: string): Promise<void> => (firestoreEnabled() ? fsDel(col, id) : fileDel(col, id));
+export const delDoc = async (col: string, id: string): Promise<void> => { await mutateDoc(col, id, () => null); };
 
 /** After a guest signs in: move every per-user doc (docs keyed by the user id) from the guest id to the account, once. */
 export async function adoptGuestDocs(fromId: string, toId: string): Promise<number> {
@@ -95,4 +84,27 @@ export async function adoptGuestDocs(fromId: string, toId: string): Promise<numb
     }
   }
   return moved;
+}
+
+// Transformations may retry on Firestore contention: keep them deterministic and idempotent.
+const queues = new Map<string, Promise<unknown>>();
+export async function mutateDoc<T>(col: string, id: string, change: (current: T | null) => T | null | Promise<T | null>): Promise<T | null> {
+  if (firestoreEnabled()) {
+    const database = await db(); const collection = database.collection(colName(col)); const ref = collection.doc(safe(id));
+    return database.runTransaction(async tx => {
+      const head = (await tx.get(ref)).data() as { d?: string; n?: number } | undefined;
+      const oldN = head?.n ?? 1; let json = head?.d ?? "";
+      for (let i = 1; i < oldN; i++) json += (await tx.get(collection.doc(`${safe(id)}~c${i}`))).data()?.d ?? "";
+      const next = await change(head ? JSON.parse(json) as T : null);
+      if (next === null) { for (let i = 1; i < oldN; i++) tx.delete(collection.doc(`${safe(id)}~c${i}`)); tx.delete(ref); return null; }
+      const encoded = JSON.stringify(next), n = Math.max(1, Math.ceil(encoded.length / CHUNK));
+      for (let i = 1; i < n; i++) tx.set(collection.doc(`${safe(id)}~c${i}`), { d: encoded.slice(i * CHUNK, (i + 1) * CHUNK), part: true });
+      for (let i = n; i < oldN; i++) tx.delete(collection.doc(`${safe(id)}~c${i}`));
+      tx.set(ref, { d: encoded.slice(0, CHUNK), n, main: true, updatedAt: Date.now() }); return next;
+    });
+  }
+  const key = `${dir()}/${safe(col)}/${safe(id)}`; const previous = queues.get(key) ?? Promise.resolve();
+  const task = previous.catch(() => {}).then(async () => { const next = await change(await fileGet<T>(col, id)); if (next === null) await fileDel(col, id); else await filePut(col, id, next); return next; });
+  queues.set(key, task);
+  try { return await task; } finally { if (queues.get(key) === task) queues.delete(key); }
 }
