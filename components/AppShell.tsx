@@ -1,4 +1,5 @@
 "use client";
+import { StartMenu } from "@/components/esign/StartMenu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { Logo } from "@/components/Logo";
@@ -43,7 +44,7 @@ export function AppShell({ user, cfg, children }: { user: { name: string; email:
         {cfg.title && cfg.mode === "side" && <b className="as-title">{cfg.title}</b>}
         {cfg.search && <label className="as-search"><Ic n="search" s={16} /><input placeholder={cfg.search} aria-label="Search" /></label>}
         <div className="as-right">
-          {cfg.right?.map(r => <Link key={r.label} href={r.href} className={"as-btn" + (r.solid ? " solid" : "")}>{r.label}</Link>)}
+          {cfg.right?.map(r => r.label === "Start" ? <StartMenu key={r.label} /> : <Link key={r.label} href={r.href} className={"as-btn" + (r.solid ? " solid" : "")}>{r.label}</Link>)}
           <details className="as-account"><summary className="as-me" aria-label="Account menu">{initial}</summary><div className="as-account-menu"><b>{user.name}</b><span>{user.guest ? "Guest session" : user.demo ? "Demo account" : user.email}</span><Link href="/app/profile">My profile</Link><Link href="/app/settings">Account settings</Link><Link href="/app/profile#password">Password</Link><form method="post" action={`${BP}/api/session/logout`}><button className="as-out">Sign out</button></form></div></details>
         </div>
       </header>

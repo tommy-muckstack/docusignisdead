@@ -5,7 +5,7 @@ import { BP } from "@/lib/basepath";
 /** Serialize saves and explicitly flush the latest snapshot before a send/use action. */
 export function useDraftSave(env: Envelope) {
   const [state, setState] = useState<"saved" | "saving" | "error">("saved");
-  const content = JSON.stringify({ title: env.title, message: env.message, sequential: env.sequential, recipients: env.recipients, fields: env.fields });
+  const content = JSON.stringify({ title: env.title, subject: env.subject, expireDays: env.expireDays, reminderDays: env.reminderDays, message: env.message, sequential: env.sequential, recipients: env.recipients, fields: env.fields });
   const latest = useRef(content); latest.current = content;
   const saved = useRef(content); const queue = useRef<Promise<unknown>>(Promise.resolve()); const timer = useRef<ReturnType<typeof setTimeout> | undefined>(undefined);
   const flush = useCallback(async () => {

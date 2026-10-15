@@ -1,8 +1,9 @@
 "use client";
-import { useCallback, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import type { Envelope, Field, FieldType } from "@/lib/esign/types";
+import type { Contact } from "@/lib/account";
+import type { Envelope, Field, FieldType, Recipient } from "@/lib/esign/types";
 import { FIELD_META } from "@/lib/esign/types";
 import { rid, sendProblems, statusSummary } from "@/lib/esign/logic";
 import { BP } from "@/lib/basepath";
@@ -17,13 +18,15 @@ export function Editor({ initial }: { initial: Envelope }) {
   const [armed, setArmed] = useState<FieldType | null>(null); const [sel, setSel] = useState<string | null>(null); const [active, setActive] = useState(initial.recipients[0]?.id ?? "");
   const { state: save, flush } = useDraftSave(env); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState("");
   const draft = env.status === "draft"; const template = env.kind === "template";
+  const [contacts, setContacts] = useState<Contact[]>([]);
+  useEffect(() => { fetch(`${BP}/api/account`).then(r => r.ok ? r.json() : null).then(j => { if (j) setContacts(j.account.contacts); }).catch(() => {}); }, []);
   const base = typeof window === "undefined" ? "" : window.location.origin + BP;
   const patch = useCallback((f: (e: Envelope) => Envelope) => setEnv(e => f(e)), []);
   const addRecipient = () => { const id = rid("r_"); patch(e => ({ ...e, recipients: [...e.recipients, { id, name: "", email: "", order: e.recipients.length + 1, token: "", status: "pending" }] })); setActive(id); };
   const delRecipient = (id: string) => { patch(e => ({ ...e, recipients: e.recipients.filter(r => r.id !== id).map((r, i) => ({ ...r, order: i + 1 })), fields: e.fields.filter(f => f.recipientId !== id) })); setActive(a => (a === id ? "" : a)); };
   const upd = (id: string, p: Partial<Field>) => patch(e => ({ ...e, fields: e.fields.map(f => (f.id === id ? { ...f, ...p } : f)) }));
   const place = (page: number, fx: number, fy: number) => {
-    if (!armed || !draft || busy) return; const rec = env.recipients.find(r => r.id === active) ?? env.recipients[0]; if (!rec) { setErr("Add a recipient first"); return; }
+    if (!armed || !draft || busy) return; const rec = env.recipients.find(r => r.id === active) ?? env.recipients[0]; if (!rec || (rec.role ?? "signer") !== "signer") { setErr("Select a signer to add fields"); return; }
     const m = FIELD_META[armed]; const f: Field = { id: rid("f_"), recipientId: rec.id, type: armed, page, x: Math.min(1 - m.w, Math.max(0, fx - m.w / 2)), y: Math.min(1 - m.h, Math.max(0, fy - m.h / 2)), w: m.w, h: m.h, required: armed !== "checkbox" };
     patch(e => ({ ...e, fields: [...e.fields, f] })); setSel(f.id); setArmed(null); setErr("");
   };
@@ -37,7 +40,9 @@ export function Editor({ initial }: { initial: Envelope }) {
   const send = async () => { setBusy(true); setErr(""); try { await flush(); const r = await fetch(`${BP}/api/envelopes/${env.id}/send`, { method: "POST" }); const j = await r.json(); if (!r.ok) throw new Error(j.error); setEnv(j.envelope); router.refresh(); } catch (error) { setErr((error as Error).message); } finally { setBusy(false); } };
   const saveTemplate = async (use: boolean) => { setBusy(true); setErr(""); try { await flush(); if (use) { const r = await fetch(`${BP}/api/templates/${env.id}/use`, { method: "POST" }); const j = await r.json(); if (!r.ok) throw new Error(j.error); router.push(`/app/envelopes/${j.envelope.id}`); } else router.push("/app/templates"); } catch (error) { setErr((error as Error).message); } finally { setBusy(false); } };
   const voidIt = async () => { const reason = prompt("Why are you voiding this document? (optional)") ; if (reason === null) return; const r = await fetch(`${BP}/api/envelopes/${env.id}/void`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reason }) }); if (r.ok) setEnv((await r.json()).envelope); };
-  const copy = async (token: string) => { await navigator.clipboard.writeText(`${base}/sign/${token}`).catch(() => {}); setCopied(token); setTimeout(() => setCopied(""), 1800); };
+  const copy = async (token: string) => { try { await navigator.clipboard.writeText(`${base}/sign/${token}`); } catch { setErr("Could not copy automatically. Select and copy the link below."); return; } setCopied(token); setTimeout(() => setCopied(""), 1800); };
+  const delivery = async (reminder: boolean) => { setBusy(true); setErr(""); try { const r = await fetch(`${BP}/api/envelopes/${env.id}/delivery`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify({ reminder }) }); const j = await r.json(); if (!r.ok) throw new Error(j.error); setEnv(j.envelope); } catch (error) { setErr((error as Error).message); } finally { setBusy(false); } };
+  const reorder = (id: string, direction: number) => patch(e => { const recipients = [...e.recipients]; const at = recipients.findIndex(r => r.id === id), to = at + direction; if (to < 0 || to >= recipients.length) return e; [recipients[at], recipients[to]] = [recipients[to], recipients[at]]; return { ...e, recipients: recipients.map((r, i) => ({ ...r, order: i + 1 })) }; });
   const selField = env.fields.find(f => f.id === sel);
   const overlay = (page: number) => <>{env.fields.filter(f => f.page === page).map(f => { const r = env.recipients.find(x => x.id === f.recipientId); const c = rcolor(r?.order ?? 1);
     return <div key={f.id} className={"dsf" + (sel === f.id ? " dsf--sel" : "")} data-testid="field" data-type={f.type} role="button" aria-label={`${FIELD_META[f.type].label} for ${r?.name || "recipient " + r?.order}`} tabIndex={0}
@@ -59,21 +64,28 @@ export function Editor({ initial }: { initial: Envelope }) {
       <aside className="dse__side">
         {draft ? <fieldset className="editor-controls" disabled={busy}>
           <h3>{template ? "Placeholder roles" : "Recipients"}</h3>
+          {!template && contacts.length > 0 && <label className="dse__lbl">Add from contacts<select value="" onChange={event => { const c = contacts.find(x => x.id === event.target.value); if (!c || env.recipients.length >= 10) return; const id = rid("r_"); patch(e => ({ ...e, recipients: [...e.recipients, { id, name: c.name, email: c.email, order: e.recipients.length + 1, token: "", status: "pending", role: "signer" }] })); setActive(id); }}><option value="">Select a contact</option>{contacts.map(c => <option key={c.id} value={c.id}>{c.name} · {c.email}</option>)}</select></label>}
           {env.recipients.map(r => <div key={r.id} className={"dsr" + (active === r.id ? " dsr--on" : "")} style={{ borderLeftColor: rcolor(r.order) }} onClick={() => setActive(r.id)}>
             <div className="dsr__row"><b style={{ color: rcolor(r.order) }}>{r.order}</b>
               <input aria-label={template ? `Role ${r.order} name` : `Recipient ${r.order} name`} placeholder={template ? "Role, e.g. Client" : r.roleName || "Full name"} value={template ? r.roleName ?? "" : r.name} onChange={e => patch(x => ({ ...x, recipients: x.recipients.map(q => (q.id === r.id ? { ...q, ...(template ? { roleName: e.target.value } : { name: e.target.value }) } : q)) }))} />
               <button className="iconbtn" aria-label={`Remove recipient ${r.order}`} onClick={() => delRecipient(r.id)}>×</button></div>
-            {!template && <input aria-label={`Recipient ${r.order} email`} placeholder="Email" value={r.email} onChange={e => patch(x => ({ ...x, recipients: x.recipients.map(q => (q.id === r.id ? { ...q, email: e.target.value } : q)) }))} />}</div>)}
-          <button className="iconbtn" onClick={addRecipient}>+ Add {template ? "role" : "recipient"}</button>
+            {!template && <input aria-label={`Recipient ${r.order} email`} placeholder="Email" value={r.email} onChange={e => patch(x => ({ ...x, recipients: x.recipients.map(q => (q.id === r.id ? { ...q, email: e.target.value } : q)) }))} />}
+            <label className="dse__lbl">Action<select aria-label={`Recipient ${r.order} action`} value={r.role ?? "signer"} onChange={event => { const role = event.target.value as Recipient["role"]; patch(e => ({ ...e, recipients: e.recipients.map(q => q.id === r.id ? { ...q, role } : q), fields: role === "signer" ? e.fields : e.fields.filter(f => f.recipientId !== r.id) })); }}><option value="signer">Signer</option><option value="cc">Receives a copy (CC)</option><option value="viewer">Needs to view</option></select></label>
+            <div className="tb"><button className="iconbtn" disabled={r.order === 1} onClick={() => reorder(r.id, -1)}>Move up</button><button className="iconbtn" disabled={r.order === env.recipients.length} onClick={() => reorder(r.id, 1)}>Move down</button></div></div>)}
+          <button className="iconbtn" disabled={env.recipients.length >= 10} onClick={addRecipient}>+ Add {template ? "role" : "recipient"}</button>
           <label className="dse__chk"><input type="checkbox" checked={env.sequential} onChange={e => patch(x => ({ ...x, sequential: e.target.checked }))} /> Sign in order</label>
           <h3>Fields <span className="ids-muted" style={{ fontWeight: 400, fontSize: 12 }}>for {env.recipients.find(r => r.id === active)?.name || "selected recipient"}</span></h3>
-          <div className="dse__pal">{FT.map(t => <button key={t} className={"dse__pbtn" + (armed === t ? " on" : "")} aria-pressed={armed === t} onClick={() => setArmed(a => (a === t ? null : t))}><span>{GLYPH[t]}</span>{FIELD_META[t].label}</button>)}</div>
+          <div className="dse__pal">{FT.map(t => <button key={t} className={"dse__pbtn" + (armed === t ? " on" : "")} aria-pressed={armed === t} disabled={(env.recipients.find(r => r.id === active)?.role ?? "signer") !== "signer"} onClick={() => setArmed(a => (a === t ? null : t))}><span>{GLYPH[t]}</span>{FIELD_META[t].label}</button>)}</div>
           <p className="ids-muted" style={{ fontSize: 13, margin: "8px 0" }}>{armed ? `Click on the page to drop a ${FIELD_META[armed].label.toLowerCase()} field.` : "Pick a field, then click on the page. Drag to move; Delete removes the selected field."}</p>
+          <label className="dse__lbl">Email subject<input maxLength={120} value={env.subject ?? env.title} onChange={e => patch(x => ({ ...x, subject: e.target.value }))} /></label>
+          <label className="dse__lbl">Expire after (days)<input type="number" min={1} max={365} value={env.expireDays ?? 30} onChange={e => patch(x => ({ ...x, expireDays: Number(e.target.value) }))} /></label>
+          <label className="dse__lbl">Reminder interval (days)<input type="number" min={1} max={30} value={env.reminderDays ?? 3} onChange={e => patch(x => ({ ...x, reminderDays: Number(e.target.value) }))} /></label>
+          <p className="ids-muted">Reminders are sent when you choose Send reminder after this interval.</p>
           <label className="dse__lbl">Message to recipients<textarea rows={3} value={env.message} onChange={e => patch(x => ({ ...x, message: e.target.value }))} placeholder="Please review and sign." /></label>
           {selField && <div className="ids-card dse__prop"><b>{FIELD_META[selField.type].label} field</b>
             {(selField.type === "text" || selField.type === "checkbox") && <label className="dse__lbl">Label<input value={selField.label ?? ""} onChange={e => upd(selField.id, { label: e.target.value })} /></label>}
             <label className="dse__chk"><input type="checkbox" checked={selField.required} onChange={e => upd(selField.id, { required: e.target.checked })} /> Required</label>
-            <label className="dse__lbl">Assigned to<select value={selField.recipientId} onChange={e => upd(selField.id, { recipientId: e.target.value })}>{env.recipients.map(r => <option key={r.id} value={r.id}>{r.name || `Recipient ${r.order}`}</option>)}</select></label>
+            <label className="dse__lbl">Assigned to<select value={selField.recipientId} onChange={e => upd(selField.id, { recipientId: e.target.value })}>{env.recipients.filter(r => (r.role ?? "signer") === "signer").map(r => <option key={r.id} value={r.id}>{r.name || `Recipient ${r.order}`}</option>)}</select></label>
             <button className="iconbtn" onClick={() => { patch(x => ({ ...x, fields: x.fields.filter(f => f.id !== selField.id) })); setSel(null); }}>Delete field</button></div>}
           {!template && problems.length > 0 && <ul className="dse__todo" data-testid="todo">{problems.slice(0, 3).map(p => <li key={p}>{p}</li>)}</ul>}
           {err && <p role="alert" className="ds-err">{err}</p>}
@@ -82,10 +94,14 @@ export function Editor({ initial }: { initial: Envelope }) {
           {env.status === "voided" && <p className="ds-err">Voided{env.voidReason ? `: ${env.voidReason}` : ""}</p>}
           {env.recipients.map(r => <div key={r.id} className="dsr dsr--static" style={{ borderLeftColor: rcolor(r.order) }}>
             <div className="dsr__row"><b style={{ color: rcolor(r.order) }}>{r.order}</b><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600 }}>{r.name}</div><div className="ids-muted" style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis" }}>{r.email}</div></div>
-              <span className={"ds-chip ds-chip--" + (r.status === "signed" ? "completed" : "sent")} data-testid={`rstatus-${r.order}`}>{r.status === "signed" ? "Signed" : "Waiting"}</span></div>
-            {env.status === "sent" && r.status === "pending" && <button className="iconbtn" onClick={() => copy(r.token)} data-testid={`copy-${r.order}`}>{copied === r.token ? "Copied!" : "Copy signing link"}</button>}
-            {env.status === "sent" && r.status === "pending" && <input readOnly className="ds-link" aria-label={`Signing link for ${r.name}`} value={`${base}/sign/${r.token}`} onFocus={e => e.currentTarget.select()} />}</div>)}
-          {env.status === "sent" && <p className="ids-muted" style={{ fontSize: 13 }}>Emails aren’t sent from this demo. Share each recipient’s link yourself.</p>}
+              <span className={"ds-chip ds-chip--" + (r.status === "signed" ? "completed" : "sent")} data-testid={`rstatus-${r.order}`}>{r.role === "cc" ? "Copy" : r.status === "viewed" ? "Reviewed" : r.status === "signed" ? "Signed" : "Waiting"}</span></div>
+            {(env.status === "sent" || env.status === "completed") && <button className="iconbtn" onClick={() => copy(r.token)} data-testid={`copy-${r.order}`}>{copied === r.token ? "Copied!" : "Copy signing link"}</button>}
+            {(env.status === "sent" || env.status === "completed") && <input readOnly className="ds-link" aria-label={`Signing link for ${r.name}`} value={`${base}/sign/${r.token}`} onFocus={e => e.currentTarget.select()} />}</div>)}
+          {env.status === "sent" && <p className="ids-muted" style={{ fontSize: 13 }}>{env.deliveryMessage || "Share each recipient’s private link. Email delivery has not been confirmed."}</p>}
+          {env.status === "completed" && env.deliveryMessage && <p className="ids-muted">{env.deliveryMessage}</p>}
+          {env.expiresAt && env.status === "sent" && <p>Expires {new Date(env.expiresAt).toLocaleString()}</p>}
+          {(env.status === "sent" || env.status === "completed") && <div className="tb"><button className="iconbtn" disabled={busy} onClick={() => delivery(false)}>Retry email delivery</button>{env.status === "sent" && <button className="iconbtn" disabled={busy} onClick={() => delivery(true)}>Send reminder</button>}</div>}
+          {err && <p role="alert" className="ds-err">{err}</p>}
           <h3>Activity</h3><ol className="dse__log" data-testid="activity">{[...env.events].reverse().map((ev, i) => <li key={i}><b>{ev.who}</b> {ev.what}<span className="ids-muted">{new Date(ev.at).toLocaleString()}</span></li>)}</ol>
         </>}
       </aside>

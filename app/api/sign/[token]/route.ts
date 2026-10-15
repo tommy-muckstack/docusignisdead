@@ -5,7 +5,7 @@ export const runtime = "nodejs";
 type Ctx = { params: Promise<{ token: string }> };
 export async function GET(_: NextRequest, { params }: Ctx) {
   const x = await loadByToken((await params).token); if (!x) return NextResponse.json({ error: "This link is not valid" }, { status: 404 });
-  if (x.env.status === "sent") await markViewed(x.env, x.r.id); return NextResponse.json({ view: signerView(x.env, x.r) });
+  if (x.env.status === "sent") x.env = (await markViewed(x.env, x.r.id)) ?? x.env; return NextResponse.json({ view: signerView(x.env, x.r) });
 }
 export async function POST(req: NextRequest, { params }: Ctx) {
   const x = await loadByToken((await params).token); if (!x) return NextResponse.json({ error: "This link is not valid" }, { status: 404 });
