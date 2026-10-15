@@ -1,15 +1,11 @@
 name: Parity verification
 on:
-  push:
-    branches: ['fix/parity-signing', 'fix/parity-verification']
-  create:
   pull_request:
   workflow_dispatch:
 permissions:
   contents: read
 jobs:
   verify:
-    if: github.event_name != 'create' || startsWith(github.ref, 'refs/heads/fix/parity-')
     runs-on: ubuntu-latest
     timeout-minutes: 25
     env:

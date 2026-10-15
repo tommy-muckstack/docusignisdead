@@ -6,7 +6,7 @@ Updated 2026-10-15. Baseline: `a02d30e523745265869dde45fe374e85a0a97ac4`, verifi
 
 The supplied QA findings are implemented as functional requirements. The real signed-in reference walkthrough is **not complete**: this host cannot launch Chromium (MachPortRendezvousServer error 141) or Firefox (SIGABRT), the requested isolated Chrome debugging session is unavailable, and no throwaway reference inbox was supplied. Findings #9–#18 therefore do not establish exact signed-in visual parity. Public reference homepage/trial pages and official documentation were inspected; all implementation/assets are original.
 
-Local validation: lint, typecheck, production build and **34 unit/integration tests pass**. Tests use isolated temporary storage and synthetic `.test` addresses. Email provider calls are mocked. No actual email, real envelope or real person’s document has been sent/signed. No environment files or secrets were read, changed or committed. Payment behavior is unchanged.
+Local validation: lint, typecheck, production build and **35 unit/integration tests pass**. Tests use isolated temporary storage and synthetic `.test` addresses. Email provider calls are mocked. No actual email, real envelope or real person’s document has been sent/signed. No environment files or secrets were read, changed or committed. Payment behavior is unchanged.
 
 A real-browser suite covers desktop 1440×900 and mobile 390×844, including actual click/fill/select/pointer events. GitHub Actions is configured to run that suite in fresh Chromium and collect after screenshots, traces, server logs and baseline screenshots from `a02d30e`. **CI results and screenshot review are pending until the branches are published.** The baseline shots compare the old clone with the new clone, not with the signed-in reference product.
 
@@ -59,7 +59,7 @@ The supplied `Black Tombstone with Transparent X.png` was recolored through imag
 | `fix/parity-send-flow` | templates | #12–#14, roles/delivery/reminders/expiry |
 | `fix/parity-signing` | send flow | #15, signing integrity and browser acceptance suite |
 
-PR URLs and CI evidence will be recorded after publication. Nothing is merged.
+All review branches are published: [Marketing/auth #3](https://github.com/tommy-muckstack/docusignisdead/pull/3), [Hygiene #4](https://github.com/tommy-muckstack/docusignisdead/pull/4), [App shell #5](https://github.com/tommy-muckstack/docusignisdead/pull/5), [Agreements #6](https://github.com/tommy-muckstack/docusignisdead/pull/6), [Templates #7](https://github.com/tommy-muckstack/docusignisdead/pull/7), [Send #8](https://github.com/tommy-muckstack/docusignisdead/pull/8), [Signing/verification #2](https://github.com/tommy-muckstack/docusignisdead/pull/2). They remain drafts pending acceptance evidence. Nothing is merged.
 
 ## Remaining external verification
 

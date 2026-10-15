@@ -83,7 +83,7 @@ export async function signingAction(env: Envelope, recipientId: string, action: 
       const at = Date.now();
       if (action === "consent") {
         if (input.version !== DISCLOSURE_VERSION) throw new SigningError("Refresh the disclosure before continuing", 422);
-        if (!r.consentedAt) { r.consentedAt = at; r.consentVersion = DISCLOSURE_VERSION; e.events.push({ at, who: r.email, what: `Agreed to electronic records and signatures; disclosure ${DISCLOSURE_VERSION}` }); }
+        if (!r.consentedAt || r.consentVersion !== DISCLOSURE_VERSION) { r.consentedAt = at; r.consentVersion = DISCLOSURE_VERSION; e.events.push({ at, who: r.email, what: `Agreed to electronic records and signatures; disclosure ${DISCLOSURE_VERSION}` }); }
       } else if (action === "decline") {
         e.status = "declined"; e.declineReason = (input.reason ?? "").trim().slice(0, 500); r.status = "declined";
         e.events.push({ at, who: r.email, what: `Declined${e.declineReason ? ": " + e.declineReason : ""}` });

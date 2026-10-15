@@ -80,3 +80,5 @@ describe("samples + finalize", () => {
     const out = await finalizePdf(orig, e, values); const doc = await PDFDocument.load(out); expect(doc.getPageCount()).toBe(pages + 1); expect(out.length).toBeGreaterThan(orig.length);
   });
 });
+
+it("deduplicates client-supplied recipient and field identities", () => { const e = draft(); const r = e.recipients[0]; const f = e.fields[0]; const next = sanitizeDraft({ recipients: [r, r], fields: [f, f] }, e); expect(new Set(next.recipients.map(x => x.id)).size).toBe(2); expect(new Set(next.recipients.map(x => x.token)).size).toBe(2); expect(new Set(next.fields.map(x => x.id)).size).toBe(2); });
