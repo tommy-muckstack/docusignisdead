@@ -4,14 +4,14 @@ export type Field = {
   x: number; y: number; w: number; h: number; // fractions of page width/height, origin top-left
   required: boolean; label?: string;
 };
-export type Recipient = { id: string; name: string; email: string; order: number; token: string; status: "pending" | "signed"; signedAt?: number };
+export type Recipient = { id: string; name: string; email: string; order: number; token: string; status: "pending" | "signed"; signedAt?: number; roleName?: string };
 export type EnvStatus = "draft" | "sent" | "completed" | "voided";
 export type EnvEvent = { at: number; who: string; what: string };
 export type Envelope = {
   id: string; ownerId: string; title: string; status: EnvStatus; createdAt: number; updatedAt: number;
   pages: { w: number; h: number }[]; recipients: Recipient[]; fields: Field[]; events: EnvEvent[];
   /** Sequential routing: recipient n+1 can only sign after recipient n. */
-  sequential: boolean; message: string; voidReason?: string; folderId?: string;
+  sequential: boolean; message: string; voidReason?: string; folderId?: string; kind?: "template";
 };
 /** What a signer is allowed to see (never other recipients' tokens). */
 export type SignerView = {

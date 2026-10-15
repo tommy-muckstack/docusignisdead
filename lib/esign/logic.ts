@@ -11,7 +11,7 @@ export function sanitizeDraft(input: any, base: Envelope): Envelope {
   const recipients: Recipient[] = (Array.isArray(input?.recipients) ? input.recipients : []).slice(0, 10).map((r: any, i: number): Recipient => {
     const prev = typeof r?.id === "string" ? old.get(r.id) : undefined;
     const cid = typeof r?.id === "string" && /^r_[a-z0-9]{3,20}$/.test(r.id) && !seen.has(r.id) ? r.id : rid("r_"); seen.add(cid);
-    return { id: prev?.id ?? cid, name: str(r?.name, 80), email: str(r?.email, 160).toLowerCase(), order: i + 1, token: prev?.token ?? newToken(), status: prev?.status ?? "pending", ...(prev?.signedAt ? { signedAt: prev.signedAt } : {}) };
+    return { id: prev?.id ?? cid, name: str(r?.name, 80), email: str(r?.email, 160).toLowerCase(), order: i + 1, roleName: str(r?.roleName, 80), token: prev?.token ?? newToken(), status: prev?.status ?? "pending", ...(prev?.signedAt ? { signedAt: prev.signedAt } : {}) };
   });
   const rids = new Set(recipients.map(r => r.id));
   const fields: Field[] = (Array.isArray(input?.fields) ? input.fields : []).slice(0, 200).flatMap((f: any): Field[] => {
@@ -24,6 +24,7 @@ export function sanitizeDraft(input: any, base: Envelope): Envelope {
 /** Problems that stop a draft from being sent. Empty array = ready. */
 export function sendProblems(e: Envelope): string[] {
   const p: string[] = [];
+  if (e.kind === "template") return ["Use this template to create an agreement before sending"];
   if (e.status !== "draft") return ["Only drafts can be sent"];
   if (!e.recipients.length) p.push("Add at least one recipient");
   for (const r of e.recipients) { if (!r.name) p.push(`Recipient ${r.order} needs a name`); if (!isEmail(r.email)) p.push(`Recipient ${r.order} needs a valid email`); }

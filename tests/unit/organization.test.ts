@@ -12,3 +12,13 @@ afterEach(async () => { delete process.env.ISDEAD_DATA_DIR; await rm(dir, { recu
 it("serializes concurrent changes without losing updates", async () => { await Promise.all(Array.from({ length: 30 }, () => mutateDoc<number>("counter", "one", value => (value ?? 0) + 1))); expect(await getDoc("counter", "one")).toBe(30); });
 it("isolates folders by owner and preserves documents when deleting a folder", async () => { const [f] = await changeFolder("alice", { action: "create", name: "Contracts" }); expect(await listFolders("bob")).toEqual([]); const e = await createEnvelope("alice", { sample: "nda" }); await mutateEnvelope(e.id, x => ({ ...x, folderId: f.id })); await changeFolder("alice", { action: "rename", id: f.id, name: "Signed work" }); expect((await listFolders("alice"))[0].name).toBe("Signed work"); await changeFolder("alice", { action: "delete", id: f.id }); expect((await getEnvelope(e.id))?.folderId).toBeUndefined(); expect(await getEnvelope(e.id)).not.toBeNull(); });
 it("rejects duplicate contact emails and keeps server-assigned ids", () => { const a = updateAccount(emptyAccount(), { contact: { id: "forged", name: "A", email: "a@example.test" } }); expect(a.contacts[0].id).not.toBe("forged"); expect(() => updateAccount(a, { contact: { name: "B", email: "A@example.test" } })).toThrow("already"); });
+it("reuses templates with fresh recipient identities and independent PDFs", async () => {
+  const { saveEnvelope, listEnvelopes, instantiateTemplate, deleteEnvelope, getPdf } = await import("@/lib/esign/server");
+  const template = await createEnvelope("alice", { sample: "nda", kind: "template" }); await saveEnvelope(template);
+  expect(await listEnvelopes("alice")).toEqual([]); expect(await listEnvelopes("alice", "template")).toHaveLength(1);
+  await expect(instantiateTemplate("bob", template.id)).rejects.toThrow("not found");
+  const draft = await instantiateTemplate("alice", template.id); expect(draft.kind).toBeUndefined(); expect(draft.fields).toHaveLength(template.fields.length);
+  expect(draft.recipients[0].token).not.toBe(template.recipients[0].token); expect(draft.fields[0].recipientId).toBe(draft.recipients[0].id);
+  expect(draft.recipients[0].email).toBe(""); expect(draft.recipients[0].roleName).toBeTruthy();
+  await deleteEnvelope(template.id); expect(await getPdf("original", draft.id)).not.toBeNull();
+});
