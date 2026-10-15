@@ -5,7 +5,7 @@ import { join } from "node:path";
 import { PDFDocument } from "pdf-lib";
 import { createEnvelope, saveEnvelope, getEnvelope, getPdf, deleteEnvelope, mutateEnvelope } from "@/lib/esign/server";
 import { sendEnvelope, submitSignature, loadByToken, voidEnvelope, signingAction, signingProgress } from "@/lib/esign/flow";
-import { sanitizeDraft, canSign, sendProblems, expired } from "@/lib/esign/logic";
+import { sanitizeDraft, canSign, sendProblems, expired, recipientAccess } from "@/lib/esign/logic";
 import { DISCLOSURE_VERSION } from "@/lib/esign/disclosure";
 import { deliverEnvelope, remindEnvelope } from "@/lib/esign/email";
 let dir: string;
@@ -38,3 +38,5 @@ it("provider failure preserves agreement and can be retried without resending ac
 it("requires recorded consent and lets a recipient save progress before finishing", async () => { const e = await fixture(); await sendEnvelope(e); expect(await submitSignature(e, e.recipients[0].id, signature)).toHaveProperty("status", 422); expect(await signingAction(e, e.recipients[0].id, "consent", { version: "old" })).toHaveProperty("status", 422); await signingAction(e, e.recipients[0].id, "consent", { version: DISCLOSURE_VERSION }); await signingAction(e, e.recipients[0].id, "later", { progress: signature }); expect((await signingProgress(e, e.recipients[0].id))?.signature).toEqual(signature.signature); expect((await getEnvelope(e.id))!.recipients[0].status).toBe("pending"); await sign(e, e.recipients[0].id, signature); expect(await signingProgress(e, e.recipients[0].id)).toBeNull(); });
 it("declining closes the entire agreement", async () => { const e = await fixture(); await sendEnvelope(e); const result = await signingAction(e, e.recipients[0].id, "decline", { reason: "Needs revision" }); expect(result).toHaveProperty("envelope.status", "declined"); expect(await submitSignature(e, e.recipients[1].id, signature)).toHaveProperty("status", 410); });
 it("rejects corrupt image signatures before recording any signer completion", async () => { const e = await fixture(); await sendEnvelope(e); const result = await sign(e, e.recipients[0].id, { values: {}, signature: { kind: "drawn", png: "data:image/png;base64,iVBORw0KGgo=" } }); expect(result).toHaveProperty("status", 422); expect((await getEnvelope(e.id))!.recipients[0].status).toBe("pending"); });
+
+it("copy recipients cannot access documents before their routing order", async () => { const e = await fixture(); e.recipients[1].role = "cc"; e.fields = e.fields.filter(f => f.recipientId === e.recipients[0].id); await saveEnvelope(e); await sendEnvelope(e); expect(recipientAccess((await getEnvelope(e.id))!, e.recipients[1]).ok).toBe(false); await sign(e, e.recipients[0].id, signature); expect(recipientAccess((await getEnvelope(e.id))!, e.recipients[1]).ok).toBe(true); });

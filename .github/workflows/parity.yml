@@ -36,6 +36,9 @@ jobs:
             sleep 1
           done
       - run: npm run test:browser
+      - name: Failure context
+        if: failure()
+        run: node scripts/parity-context.mjs
       - name: Baseline screenshots
         if: always()
         run: |
@@ -46,6 +49,9 @@ jobs:
           ISDEAD_DATA_DIR=/tmp/docusignisdead-baseline-data npm run start -- --hostname 127.0.0.1 --port 3219 > /tmp/parity-baseline.log 2>&1 &
           cd "$GITHUB_WORKSPACE"
           node scripts/parity-baseline.mjs
+      - name: Visual QA preview
+        if: always()
+        run: node scripts/parity-preview.mjs
       - uses: actions/upload-artifact@v4
         if: always()
         with:

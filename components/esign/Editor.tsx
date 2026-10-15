@@ -20,6 +20,14 @@ export function Editor({ initial }: { initial: Envelope }) {
   const [armed, setArmed] = useState<FieldType | null>(null); const [sel, setSel] = useState<string | null>(null); const [active, setActive] = useState(initial.recipients[0]?.id ?? "");
   const { state: save, flush } = useDraftSave(env); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState("");
   const draft = env.status === "draft"; const template = env.kind === "template";
+  useEffect(() => {
+    let gone = false;
+    fetch(`${BP}/api/envelopes/${initial.id}`, { cache: "no-store" }).then(async response => {
+      if (!response.ok) throw new Error("Could not refresh this agreement"); const { envelope } = await response.json();
+      if (!gone) { setEnv(current => current === initial ? envelope : current); setActive(current => current || envelope.recipients[0]?.id || ""); }
+    }).catch(error => { if (!gone) setErr(error.message); });
+    return () => { gone = true; };
+  }, [initial]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   useEffect(() => { fetch(`${BP}/api/account`).then(r => r.ok ? r.json() : null).then(j => { if (j) setContacts(j.account.contacts); }).catch(() => {}); }, []);
   const base = typeof window === "undefined" ? "" : window.location.origin + BP;

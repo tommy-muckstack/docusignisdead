@@ -37,14 +37,20 @@ export function sendProblems(e: Envelope): string[] {
   return p;
 }
 /** Whose turn is it? Sequential: the first unsigned recipient. Parallel: everyone unsigned. */
+export function recipientAccess(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: string } {
+  if (e.status === "completed") return { ok: true };
+  if (e.status !== "sent" || expired(e)) return { ok: false };
+  if (!e.sequential || r.status === "signed" || r.status === "viewed") return { ok: true };
+  const blocker = e.recipients.find(x => x.order < r.order && x.role !== "cc" && x.status === "pending");
+  return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
+}
 export function canSign(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: string } {
-  if (e.status !== "sent" || expired(e) || r.status !== "pending" || r.role === "cc") return { ok: false };
-  if (!e.sequential) return { ok: true };
-  const blocker = e.recipients.find(x => x.order < r.order && x.role !== "cc" && x.status === "pending"); return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
+  if (e.status !== "sent" || r.status !== "pending" || r.role === "cc") return { ok: false };
+  return recipientAccess(e, r);
 }
 export function findByToken(e: Envelope, token: string) { return e.recipients.find(r => r.token === token); }
 export function signerView(e: Envelope, r: Recipient): SignerView {
-  const c = canSign(e, r);
+  const c = r.role === "cc" ? recipientAccess(e, r) : canSign(e, r);
   return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer", consentedAt: r.consentVersion === DISCLOSURE_VERSION ? r.consentedAt : undefined }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
     fields: e.fields.filter(f => f.recipientId === r.id), message: e.message, others: e.recipients.filter(x => x.id !== r.id).map(x => ({ name: x.name, status: x.status })) };
 }

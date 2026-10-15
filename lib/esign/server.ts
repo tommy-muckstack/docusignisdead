@@ -32,7 +32,7 @@ export async function createEnvelope(ownerId: string, opts: { title?: string; pd
   }
   if (opts.self && !opts.kind) {
     const first = base.recipients[0] ?? { id: rid("r_"), token: newToken(), order: 1, status: "pending" as const, name: "", email: "" };
-    base.recipients = [{ ...first, name: opts.self.name, email: opts.self.email, role: "signer" }]; base.fields = base.fields.filter(f => f.recipientId === first.id);
+    base.recipients = [{ ...first, name: defaults.name || opts.self.name, email: opts.self.email, role: "signer" }]; base.fields = base.fields.filter(f => f.recipientId === first.id);
   }
   await putPdf("original", id, bytes); await saveEnvelope(base); return base;
 }
