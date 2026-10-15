@@ -12,7 +12,7 @@ export async function listEnvelopes(ownerId: string, kind?: "template") { return
 type Blob = { b64: string };
 export async function getPdf(kind: "original" | "signed", id: string): Promise<Uint8Array | null> { const d = await getDoc<Blob>(kind, id); return d ? new Uint8Array(Buffer.from(d.b64, "base64")) : null; }
 export const putPdf = (kind: "original" | "signed", id: string, bytes: Uint8Array) => putDoc<Blob>(kind, id, { b64: Buffer.from(bytes).toString("base64") });
-export async function deleteEnvelope(id: string) { const e = await getEnvelope(id); await delDoc("envelopes", id); await delDoc("original", id); await delDoc("signed", id); await delDoc("values", id); for (const r of e?.recipients ?? []) await delDoc("tokens", r.token); }
+export async function deleteEnvelope(id: string) { const e = await getEnvelope(id); await delDoc("envelopes", id); await delDoc("original", id); await delDoc("signed", id); await delDoc("values", id); for (const r of e?.recipients ?? []) { await delDoc("tokens", r.token); await delDoc("signing-progress", `${id}_${r.id}`); } }
 /** Validate + read page sizes from an uploaded PDF. Throws a user-readable error. */
 export async function readPages(bytes: Uint8Array) {
   if (bytes.length > MAX_PDF) throw new Error("PDF is too large (4 MB max)");
@@ -32,7 +32,7 @@ export async function createEnvelope(ownerId: string, opts: { title?: string; pd
   }
   if (opts.self && !opts.kind) {
     const first = base.recipients[0] ?? { id: rid("r_"), token: newToken(), order: 1, status: "pending" as const, name: "", email: "" };
-    base.recipients = [{ ...first, name: opts.self.name, email: opts.self.email, role: "signer" }]; base.fields = base.fields.filter(f => f.recipientId === first.id);
+    base.recipients = [{ ...first, name: defaults.name || opts.self.name, email: opts.self.email, role: "signer" }]; base.fields = base.fields.filter(f => f.recipientId === first.id);
   }
   await putPdf("original", id, bytes); await saveEnvelope(base); return base;
 }

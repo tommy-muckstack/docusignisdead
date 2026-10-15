@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { mutateDoc } from "@/lib/store";
 import { getEnvelope, getPdf, mutateEnvelope } from "./server";
-import { canSign, expired } from "./logic";
+import { canSign, expired, recipientAccess } from "./logic";
 import type { Envelope } from "./types";
 export function mailConfiguration() {
   const key = process.env.RESEND_API_KEY, from = process.env.EMAIL_FROM, base = process.env.APP_URL;
@@ -28,7 +28,7 @@ export async function deliverEnvelope(id: string, reminderKey = "") {
   }
   if ((env.status !== "sent" && env.status !== "completed") || expired(env)) return env;
   const completed = env.status === "completed"; const pdf = completed ? await getPdf("signed", id) : null;
-  const targets = completed ? [...env.recipients.map(r => ({ id: r.id, email: r.email, token: r.token })), ...(env.senderEmail && !env.recipients.some(r => r.email === env.senderEmail) ? [{ id: "owner", email: env.senderEmail, token: "" }] : [])] : env.recipients.filter(r => r.role === "cc" ? !reminderKey : canSign(env, r).ok);
+  const targets = completed ? [...env.recipients.map(r => ({ id: r.id, email: r.email, token: r.token })), ...(env.senderEmail && !env.recipients.some(r => r.email === env.senderEmail) ? [{ id: "owner", email: env.senderEmail, token: "" }] : [])] : env.recipients.filter(r => r.role === "cc" ? !reminderKey && recipientAccess(env, r).ok : canSign(env, r).ok);
   let failed = 0;
   for (const r of targets) {
     // Recheck cancellations before each external send. Recipient links independently enforce revocation.

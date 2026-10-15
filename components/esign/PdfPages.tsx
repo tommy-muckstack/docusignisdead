@@ -3,11 +3,11 @@ import { useEffect, useRef, useState } from "react";
 type Page = { w: number; h: number };
 /** Renders each PDF page to a canvas with pdf.js (client only) and lets the caller draw an overlay on top of every page.
  *  Overlay coordinates are fractions of the page, so the layout is the same at any width. */
-export function PdfPages({ url, pages, width, overlay, onPageClick }: { url: string; pages: Page[]; width: number; overlay?: (page: number) => React.ReactNode; onPageClick?: (page: number, fx: number, fy: number) => void }) {
+export function PdfPages({ url, pages, width, overlay, onPageClick, onReady }: { url: string; pages: Page[]; width: number; overlay?: (page: number) => React.ReactNode; onPageClick?: (page: number, fx: number, fy: number) => void; onReady?: (ready: boolean) => void }) {
   const [state, setState] = useState<"loading" | "ready" | "error">("loading");
   const canvases = useRef<(HTMLCanvasElement | null)[]>([]);
   useEffect(() => {
-    let dead = false; let doc: any;
+    let dead = false; let doc: any; setState("loading"); onReady?.(false);
     (async () => {
       try {
         const pdfjs: any = await import("pdfjs-dist");
@@ -21,11 +21,11 @@ export function PdfPages({ url, pages, width, overlay, onPageClick }: { url: str
           await pg.render({ canvasContext: c.getContext("2d")!, viewport: vp }).promise;
           c.dataset["rendered"] = "1";
         }
-        if (!dead) setState("ready");
+        if (!dead) { setState("ready"); onReady?.(true); }
       } catch { if (!dead) setState("error"); }
     })();
     return () => { dead = true; doc?.destroy?.(); };
-  }, [url, width]);
+  }, [url, width, onReady]);
   return <div className="dsp" data-state={state} data-testid="pdf-pages">
     {state === "error" && <p className="ids-muted" role="alert">Could not display this PDF.</p>}
     {pages.map((p, i) => <div key={i} className="dsp__page" data-page={i} style={{ width, height: Math.round(width * p.h / p.w) }}

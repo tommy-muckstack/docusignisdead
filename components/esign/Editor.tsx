@@ -8,16 +8,26 @@ import { FIELD_META } from "@/lib/esign/types";
 import { rid, sendProblems, statusSummary } from "@/lib/esign/logic";
 import { BP } from "@/lib/basepath";
 import { PdfPages } from "./PdfPages";
+import { usePdfWidth } from "./usePdfWidth";
 import { useDraftSave } from "./useDraftSave";
 import { rcolor } from "./colors";
-const PAGE_W = 680;
+
 const FT: FieldType[] = ["signature", "initials", "date", "text", "checkbox"];
 const GLYPH: Record<FieldType, string> = { signature: "✍", initials: "AB", date: "📅", text: "T", checkbox: "☑" };
 export function Editor({ initial }: { initial: Envelope }) {
+  const pdfSize = usePdfWidth(680);
   const [env, setEnv] = useState<Envelope>(initial); const router = useRouter();
   const [armed, setArmed] = useState<FieldType | null>(null); const [sel, setSel] = useState<string | null>(null); const [active, setActive] = useState(initial.recipients[0]?.id ?? "");
   const { state: save, flush } = useDraftSave(env); const [err, setErr] = useState(""); const [busy, setBusy] = useState(false); const [copied, setCopied] = useState("");
   const draft = env.status === "draft"; const template = env.kind === "template";
+  useEffect(() => {
+    let gone = false;
+    fetch(`${BP}/api/envelopes/${initial.id}`, { cache: "no-store" }).then(async response => {
+      if (!response.ok) throw new Error("Could not refresh this agreement"); const { envelope } = await response.json();
+      if (!gone) { setEnv(current => current === initial ? envelope : current); setActive(current => current || envelope.recipients[0]?.id || ""); }
+    }).catch(error => { if (!gone) setErr(error.message); });
+    return () => { gone = true; };
+  }, [initial]);
   const [contacts, setContacts] = useState<Contact[]>([]);
   useEffect(() => { fetch(`${BP}/api/account`).then(r => r.ok ? r.json() : null).then(j => { if (j) setContacts(j.account.contacts); }).catch(() => {}); }, []);
   const base = typeof window === "undefined" ? "" : window.location.origin + BP;
@@ -91,6 +101,7 @@ export function Editor({ initial }: { initial: Envelope }) {
           {err && <p role="alert" className="ds-err">{err}</p>}
         </fieldset> : <>
           <h3>Status <span className="ids-muted" style={{ fontWeight: 400 }}>· {statusSummary(env)}</span></h3>
+          {env.status === "declined" && <p className="ds-err">Declined{env.declineReason ? `: ${env.declineReason}` : ""}</p>}
           {env.status === "voided" && <p className="ds-err">Voided{env.voidReason ? `: ${env.voidReason}` : ""}</p>}
           {env.recipients.map(r => <div key={r.id} className="dsr dsr--static" style={{ borderLeftColor: rcolor(r.order) }}>
             <div className="dsr__row"><b style={{ color: rcolor(r.order) }}>{r.order}</b><div style={{ flex: 1, minWidth: 0 }}><div style={{ fontWeight: 600 }}>{r.name}</div><div className="ids-muted" style={{ fontSize: 13, overflow: "hidden", textOverflow: "ellipsis" }}>{r.email}</div></div>
@@ -105,6 +116,6 @@ export function Editor({ initial }: { initial: Envelope }) {
           <h3>Activity</h3><ol className="dse__log" data-testid="activity">{[...env.events].reverse().map((ev, i) => <li key={i}><b>{ev.who}</b> {ev.what}<span className="ids-muted">{new Date(ev.at).toLocaleString()}</span></li>)}</ol>
         </>}
       </aside>
-      <main className={"dse__doc" + (armed ? " dse__doc--armed" : "")} data-testid="doc"><PdfPages url={`${BP}/api/envelopes/${env.id}/pdf${env.status === "completed" ? "?signed=1" : ""}`} pages={env.pages} width={PAGE_W} overlay={env.status === "completed" ? undefined : overlay} onPageClick={(p, x, y) => { place(p, x, y); if (!armed) setSel(null); }} /></main>
+      <main ref={pdfSize.ref} className={"dse__doc" + (armed ? " dse__doc--armed" : "")} data-testid="doc"><PdfPages url={`${BP}/api/envelopes/${env.id}/pdf${env.status === "completed" ? "?signed=1" : ""}`} pages={env.pages} width={pdfSize.width} overlay={env.status === "completed" ? undefined : overlay} onPageClick={(p, x, y) => { place(p, x, y); if (!armed) setSel(null); }} /></main>
     </div></div>;
 }

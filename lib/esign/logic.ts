@@ -1,3 +1,4 @@
+import { DISCLOSURE_VERSION } from "./disclosure";
 import type { Envelope, Field, FieldType, Recipient, SignPayload, SignerView } from "./types";
 const FTYPES = new Set<FieldType>(["signature", "initials", "date", "text", "checkbox"]);
 export const rid = (p = "") => p + Array.from(crypto.getRandomValues(new Uint8Array(9)), b => "abcdefghijkmnpqrstuvwxyz23456789"[b % "abcdefghijkmnpqrstuvwxyz23456789".length]).join("");
@@ -9,15 +10,17 @@ export const isEmail = (s: string) => /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(s);
 export function sanitizeDraft(input: any, base: Envelope): Envelope {
   const old = new Map(base.recipients.map(r => [r.id, r])); const seen = new Set<string>();
   const recipients: Recipient[] = (Array.isArray(input?.recipients) ? input.recipients : []).slice(0, 10).map((r: any, i: number): Recipient => {
-    const prev = typeof r?.id === "string" ? old.get(r.id) : undefined;
+    const prev = typeof r?.id === "string" && !seen.has(r.id) ? old.get(r.id) : undefined;
     const cid = typeof r?.id === "string" && /^r_[a-z0-9]{3,20}$/.test(r.id) && !seen.has(r.id) ? r.id : rid("r_"); seen.add(cid);
     return { id: prev?.id ?? cid, name: str(r?.name, 80), email: str(r?.email, 160).toLowerCase(), order: i + 1, role: r?.role === "cc" || r?.role === "viewer" ? r.role : "signer", roleName: str(r?.roleName, 80), token: prev?.token ?? newToken(), status: prev?.status ?? "pending", ...(prev?.signedAt ? { signedAt: prev.signedAt } : {}) };
   });
   const rids = new Set(recipients.filter(r => (r.role ?? "signer") === "signer").map(r => r.id));
+  const fieldIds = new Set<string>();
   const fields: Field[] = (Array.isArray(input?.fields) ? input.fields : []).slice(0, 200).flatMap((f: any): Field[] => {
     if (!FTYPES.has(f?.type) || !rids.has(f?.recipientId)) return [];
     const page = Math.round(clamp(f.page, 0, Math.max(0, base.pages.length - 1))); const w = clamp(f.w, 0.01, 1), h = clamp(f.h, 0.01, 1);
-    return [{ id: /^[A-Za-z0-9_-]{3,40}$/.test(f?.id ?? "") ? f.id : rid("f_"), recipientId: f.recipientId, type: f.type, page, x: clamp(f.x, 0, 1 - w), y: clamp(f.y, 0, 1 - h), w, h, required: f.type === "checkbox" ? !!f.required : f.required !== false, ...(f.label ? { label: str(f.label, 60) } : {}) }];
+    const id = /^[A-Za-z0-9_-]{3,40}$/.test(f?.id ?? "") && !fieldIds.has(f.id) ? f.id : rid("f_"); fieldIds.add(id);
+    return [{ id, recipientId: f.recipientId, type: f.type, page, x: clamp(f.x, 0, 1 - w), y: clamp(f.y, 0, 1 - h), w, h, required: f.type === "checkbox" ? !!f.required : f.required !== false, ...(f.label ? { label: str(f.label, 60) } : {}) }];
   });
   return { ...base, title: str(input?.title, 120) || "Untitled document", message: str(input?.message, 600), subject: str(input?.subject, 120), expireDays: Math.round(clamp(input?.expireDays ?? base.expireDays ?? 30, 1, 365)), reminderDays: Math.round(clamp(input?.reminderDays ?? base.reminderDays ?? 3, 1, 30)), sequential: input?.sequential !== false, recipients, fields, updatedAt: Date.now() };
 }
@@ -34,15 +37,21 @@ export function sendProblems(e: Envelope): string[] {
   return p;
 }
 /** Whose turn is it? Sequential: the first unsigned recipient. Parallel: everyone unsigned. */
+export function recipientAccess(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: string } {
+  if (e.status === "completed") return { ok: true };
+  if (e.status !== "sent" || expired(e)) return { ok: false };
+  if (!e.sequential || r.status === "signed" || r.status === "viewed") return { ok: true };
+  const blocker = e.recipients.find(x => x.order < r.order && x.role !== "cc" && x.status === "pending");
+  return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
+}
 export function canSign(e: Envelope, r: Recipient): { ok: boolean; waitingFor?: string } {
-  if (e.status !== "sent" || expired(e) || r.status !== "pending" || r.role === "cc") return { ok: false };
-  if (!e.sequential) return { ok: true };
-  const blocker = e.recipients.find(x => x.order < r.order && x.role !== "cc" && x.status === "pending"); return blocker ? { ok: false, waitingFor: blocker.name } : { ok: true };
+  if (e.status !== "sent" || r.status !== "pending" || r.role === "cc") return { ok: false };
+  return recipientAccess(e, r);
 }
 export function findByToken(e: Envelope, token: string) { return e.recipients.find(r => r.token === token); }
 export function signerView(e: Envelope, r: Recipient): SignerView {
-  const c = canSign(e, r);
-  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer" }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
+  const c = r.role === "cc" ? recipientAccess(e, r) : canSign(e, r);
+  return { title: e.title, status: e.status, me: { id: r.id, name: r.name, email: r.email, status: r.status, role: r.role ?? "signer", consentedAt: r.consentVersion === DISCLOSURE_VERSION ? r.consentedAt : undefined }, expired: expired(e), myTurn: c.ok, ...(c.waitingFor ? { waitingFor: c.waitingFor } : {}), pages: e.pages,
     fields: e.fields.filter(f => f.recipientId === r.id), message: e.message, others: e.recipients.filter(x => x.id !== r.id).map(x => ({ name: x.name, status: x.status })) };
 }
 export const todayStr = (at = Date.now()) => new Date(at).toISOString().slice(0, 10);
