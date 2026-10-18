@@ -5,7 +5,6 @@
 import { useEffect } from "react";
 import { usePathname } from "next/navigation";
 import { superProps, LEGACY_PROPS, type EventName, type Surface } from "./taxonomy";
-import { redactProps, redactUrl } from "./redact";
 type PH = typeof import("posthog-js").default;
 type Props = Record<string, string | number | boolean | null | undefined>;
 let ph: PH | null = null; let loading: Promise<PH | null> | null = null;
@@ -16,6 +15,15 @@ export const analyticsEnabled = !!KEY;
 // Which paths (after the basePath) are the working product: /app and the public signing page /sign/<token>. Everything else is the marketing site.
 const surfaceOf = (pathname: string): Surface => (/^\/(app|sign)(\/|$)/.test(pathname.slice(BP.length)) ? "app" : "landing");
 
+// Privacy: URL properties keep only origin + path (query strings and hashes can hold user content like prefilled links),
+// path segments listed in PRIVATE_PATHS are masked (tokens/ids that work like passwords), and the page title is dropped
+// (it can be a user's own page or document name).
+const PRIVATE_PATHS: RegExp[] = [/(\/sign\/)[^/?#]+/g] // signing links (/sign/<token>) are bearer credentials;
+const URL_PROPS = ["$current_url", "$referrer", "$initial_current_url", "$initial_referrer", "$prev_pageview_pathname", "$pathname", "$initial_pathname", "$session_entry_url", "$session_entry_pathname"];
+const cleanUrl = (v: unknown) => { if (typeof v !== "string" || !v || v === "$direct") return v; let u = v.split(/[?#]/)[0]!; for (const re of PRIVATE_PATHS) u = u.replace(re, "$1:id"); return u; };
+export function scrub(e: any) { if (!e?.properties) return e; for (const k of URL_PROPS) if (k in e.properties) e.properties[k] = cleanUrl(e.properties[k]); delete e.properties.title; if (e.$set) for (const k of URL_PROPS) if (k in e.$set) e.$set[k] = cleanUrl(e.$set[k]); if (e.$set_once) for (const k of URL_PROPS) if (k in e.$set_once) e.$set_once[k] = cleanUrl(e.$set_once[k]); return e; }
+
+
 async function client(): Promise<PH | null> {
   if (!KEY || typeof window === "undefined") return null;
   if (ph) return ph;
@@ -25,10 +33,9 @@ async function client(): Promise<PH | null> {
     const debug = process.env.NODE_ENV !== "production" && typeof localStorage !== "undefined" && localStorage.getItem("isdead_ph_debug") === "1";
     p.init(KEY, {
       api_host: `${location.origin}${BP}/ingest`, ui_host: UI_HOST,
-      capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true,
+      capture_pageview: false, capture_pageleave: true, autocapture: false, disable_session_recording: true, capture_heatmaps: false, capture_performance: false, before_send: scrub,
       persistence: "localStorage+cookie", person_profiles: "always", debug, opt_out_useragent_filter: debug,
       // Strip signing-link tokens from every URL property (auto events included) before anything leaves the browser.
-      before_send: e => (e ? { ...e, properties: redactProps(e.properties), ...(e.$set ? { $set: redactProps(e.$set) } : {}), ...(e.$set_once ? { $set_once: redactProps(e.$set_once) } : {}) } : e),
     });
     // Every IsDead app shares the yourappisdead.com cookie, and super properties persist in it: clear other apps'
     // leftovers, then set ours (otherwise the hub's product=yourappisdead would ride along on this app's events).
@@ -56,6 +63,6 @@ export function resetIdentity() { void client().then(p => { p?.reset(); p?.regis
 /** Mount once in the root layout: boots the client and sends a $pageview per route change. */
 export function Analytics() {
   const path = usePathname();
-  useEffect(() => { if (!path) return; void client().then(p => { if (!p) return; p.register({ surface: surfaceOf(location.pathname) }); p.capture("$pageview", { $current_url: redactUrl(location.href) }); }); }, [path]);
+  useEffect(() => { if (!path) return; void client().then(p => { if (!p) return; p.register({ surface: surfaceOf(location.pathname) }); p.capture("$pageview"); }); }, [path]);
   return null;
 }

@@ -18,9 +18,17 @@ One PostHog project (US cloud, project **666931**) collects the hub and every Is
 | `env` | `production` \| `development` | |
 | `account_type` | `firebase` \| `guest` \| `demo` | registered once the workspace loads |
 
-Signing links are bearer credentials: `lib/analytics/redact.ts` rewrites `/sign/<token>` to `/sign/:token` in every URL property (`$current_url`, `$pathname`, `$referrer`, …) in `before_send`, so tokens never reach PostHog.
+Signing links are bearer credentials: the client's `scrub` (`before_send` in `lib/analytics/posthog.tsx`) masks `/sign/<token>` to `/sign/:id` in every URL property (`$current_url`, `$pathname`, `$referrer`, `$session_entry_url`, …) via `PRIVATE_PATHS`, so tokens never reach PostHog.
 
 All IsDead apps share the yourappisdead.com cookie, so the client unregisters other apps' legacy super properties at boot and re-registers ours after `reset()`.
+
+## Privacy (scrub)
+`scrub` in `lib/analytics/posthog.tsx` runs as `before_send` on every event, automatic ones included:
+- URL properties (`$current_url`, `$referrer`, `$pathname`, initial/prev variants) keep only origin + path; query strings and hashes are dropped (they can carry user content such as prefilled links).
+- The page `title` is dropped (it can be a user's own document or page name).
+- `PRIVATE_PATHS` masks `/sign/<token>` as `/sign/:id` (signing links are bearer credentials).
+- Heatmaps, web-vitals/performance capture, autocapture and session replay are all off in `init`.
+Property names `source`, `app`, `app_id`, `site_id` and `environment` are reserved (legacy shared super properties); use `via` / `origin` instead.
 
 ## Identity
 Signed-in users are identified by Firebase uid (`account_type: "firebase"`) from `components/AppShell.tsx`. Guests and the demo account are never identified. Sign-out sends `app_signed_out`, then `reset()`. Recipients on the public signing page are anonymous.
