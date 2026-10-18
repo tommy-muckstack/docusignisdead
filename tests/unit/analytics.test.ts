@@ -7,6 +7,10 @@ describe("analytics taxonomy", () => {
 });
 import { scrub } from "@/lib/analytics/posthog";
 describe("analytics privacy", () => {
+  it("cleans every url/referrer/pathname key, including nested $set / $set_once", () => {
+    const e = scrub({ event: "$pageview", properties: { $session_entry_url: "https://yourappisdead.com/x/?ref=secret#h", $set_once: { $initial_current_url: "https://yourappisdead.com/x/?url=https://secret.example", $initial_referrer: "$direct" } }, $set: { $current_url: "https://yourappisdead.com/x/app?q=1" } });
+    expect(e.properties.$session_entry_url).toBe("https://yourappisdead.com/x/"); expect(e.properties.$set_once.$initial_current_url).toBe("https://yourappisdead.com/x/"); expect(e.properties.$set_once.$initial_referrer).toBe("$direct"); expect(e.$set.$current_url).toBe("https://yourappisdead.com/x/app");
+  });
   it("strips query strings, hashes and titles", () => {
     const e = scrub({ event: "$pageview", properties: { $current_url: "https://yourappisdead.com/x/app?url=https://secret.example#frag", $referrer: "https://google.com/search?q=me", title: "My private doc" } });
     expect(e.properties.$current_url).toBe("https://yourappisdead.com/x/app"); expect(e.properties.$referrer).toBe("https://google.com/search"); expect("title" in e.properties).toBe(false);

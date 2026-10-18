@@ -24,7 +24,7 @@ All IsDead apps share the yourappisdead.com cookie, so the client unregisters ot
 
 ## Privacy (scrub)
 `scrub` in `lib/analytics/posthog.tsx` runs as `before_send` on every event, automatic ones included:
-- URL properties (`$current_url`, `$referrer`, `$pathname`, initial/prev variants) keep only origin + path; query strings and hashes are dropped (they can carry user content such as prefilled links).
+- Every property whose key ends in `url`, `referrer` or `pathname` (`$current_url`, `$session_entry_url`, `$initial_referrer`, …), at the top level and inside `$set` / `$set_once` (top-level or nested in `properties`), keeps only origin + path; query strings and hashes are dropped (they can carry user content such as prefilled links).
 - The page `title` is dropped (it can be a user's own document or page name).
 - `PRIVATE_PATHS` masks `/sign/<token>` as `/sign/:id` (signing links are bearer credentials).
 - Heatmaps, web-vitals/performance capture, autocapture and session replay are all off in `init`.
