@@ -2,6 +2,8 @@
 import { StartMenu } from "@/components/esign/StartMenu";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useEffect } from "react";
+import { identify, resetIdentity, trackNow, EVENTS } from "@/lib/analytics";
 import { Logo } from "@/components/Logo";
 import { BP } from "@/lib/basepath";
 import "@/app/appshell.css";
@@ -25,8 +27,12 @@ const P: Record<string, string> = {
 };
 export const Ic = ({ n, s = 20 }: { n: string; s?: number }) => <svg width={s} height={s} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" strokeLinejoin="round" aria-hidden><path d={P[n] || P.grid} /></svg>;
 
-export function AppShell({ user, cfg, children }: { user: { name: string; email: string; demo: boolean; guest?: boolean }; cfg: ShellCfg; children: React.ReactNode }) {
+export function AppShell({ user, cfg, children }: { user: { id?: string; name: string; email: string; demo: boolean; guest?: boolean }; cfg: ShellCfg; children: React.ReactNode }) {
   const path = usePathname() || "";
+  // Signed-in Firebase users are identified by uid; guests and the demo account only get account_type.
+  useEffect(() => { if (user.id) identify(user.id, user.guest ? "guest" : user.demo ? "demo" : "firebase"); }, [user.id, user.guest, user.demo]);
+  // Send app_signed_out and reset the PostHog identity before the logout form navigates away.
+  const signOut = async (e: React.FormEvent<HTMLFormElement>) => { e.preventDefault(); const form = e.currentTarget; await trackNow(EVENTS.app_signed_out); resetIdentity(); setTimeout(() => form.submit(), 50); };
   const rel = path.startsWith(BP) ? path.slice(BP.length) || "/" : path;
   const on = (h: string) => h === "/app" ? rel === "/app" : rel.startsWith(h);
   const initial = (user.name || user.email || "?").trim()[0]?.toUpperCase();
@@ -45,7 +51,7 @@ export function AppShell({ user, cfg, children }: { user: { name: string; email:
         {cfg.search && <label className="as-search"><Ic n="search" s={16} /><input placeholder={cfg.search} aria-label="Search" /></label>}
         <div className="as-right">
           {cfg.right?.map(r => r.label === "Start" ? <StartMenu key={r.label} /> : <Link key={r.label} href={r.href} className={"as-btn" + (r.solid ? " solid" : "")}>{r.label}</Link>)}
-          <details className="as-account"><summary className="as-me" aria-label="Account menu">{initial}</summary><div className="as-account-menu"><b>{user.name}</b><span>{user.guest ? "Guest session" : user.demo ? "Demo account" : user.email}</span><Link href="/app/profile">My profile</Link><Link href="/app/settings">Account settings</Link><Link href="/app/profile#password">Password</Link><form method="post" action={`${BP}/api/session/logout`}><button className="as-out">Sign out</button></form></div></details>
+          <details className="as-account"><summary className="as-me" aria-label="Account menu">{initial}</summary><div className="as-account-menu"><b>{user.name}</b><span>{user.guest ? "Guest session" : user.demo ? "Demo account" : user.email}</span><Link href="/app/profile">My profile</Link><Link href="/app/settings">Account settings</Link><Link href="/app/profile#password">Password</Link><form method="post" action={`${BP}/api/session/logout`} onSubmit={signOut}><button className="as-out">Sign out</button></form></div></details>
         </div>
       </header>
       <nav className="as-mobile-nav" aria-label="App navigation">{cfg.items.map(nav)}</nav>
