@@ -3,6 +3,7 @@ import { useEffect, useRef, useState } from "react";
 import type { Field, SignatureValue, SignerView } from "@/lib/esign/types";
 import { initialsOf, todayStr } from "@/lib/esign/logic";
 import { BP } from "@/lib/basepath";
+import { track, EVENTS } from "@/lib/analytics";
 import { PdfPages } from "./PdfPages";
 import { DISCLOSURE_TITLE, DISCLOSURE_TEXT, DISCLOSURE_VERSION } from "@/lib/esign/disclosure";
 import { Logo } from "@/components/Logo";
@@ -23,9 +24,16 @@ export function SignFlow({ token }: { token: string }) {
   const [width, setWidth] = useState(320); const [pdfReady, setPdfReady] = useState(false);
   useEffect(() => { const resize = () => setWidth(Math.min(760, window.innerWidth - 24)); resize(); window.addEventListener("resize", resize); return () => window.removeEventListener("resize", resize); }, []);
   useEffect(() => { let cancelled = false; (async () => { try { const r = await fetch(`${BP}/api/sign/${token}`); const j = await r.json(); if (!r.ok) throw new Error(j.error ?? "This link is not valid"); if (cancelled) return; setView(j.view); setTyped(j.view.me.name); if (j.view.progress) { setVals(j.view.progress.values ?? {}); setSig(j.view.progress.signature ?? null); } } catch (e) { if (!cancelled) setFatal((e as Error).message); } })(); return () => { cancelled = true; }; }, [token]);
+  // Analytics for the public signer page (surface "app"): kinds and counts only, never field values or names.
+  function signedEvent(body: object) {
+    const action = (body as { action?: string }).action;
+    if (action === "consent") track(EVENTS.app_signing_consented);
+    else if (action === "decline") track(EVENTS.app_document_declined);
+    else if (!action && view) track(EVENTS.app_document_signed, { role: view.me.role, signature: sig?.kind ?? "none", fields: view.fields.length });
+  }
   async function request(body: object) {
     setBusy(true); setErr("");
-    try { const r = await fetch(`${BP}/api/sign/${token}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json(); if (!r.ok) throw new Error(j.error); setView(j.view); return true; }
+    try { const r = await fetch(`${BP}/api/sign/${token}`, { method: "POST", headers: { "content-type": "application/json" }, body: JSON.stringify(body) }); const j = await r.json(); if (!r.ok) throw new Error(j.error); signedEvent(body); setView(j.view); return true; }
     catch (e) { setErr((e as Error).message); return false; } finally { setBusy(false); }
   }
   const decline = async () => { const reason = prompt("Declining stops this agreement for everyone. You may give the sender a reason:"); if (reason !== null) await request({ action: "decline", reason }); };
